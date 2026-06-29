@@ -1,0 +1,4 @@
+<resources>
+
+    <style name="Theme.ApnaGavAdmin" parent="Theme.MaterialComponents.Light" />
+</resources>
