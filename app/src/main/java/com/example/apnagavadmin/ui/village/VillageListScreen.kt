@@ -73,12 +73,12 @@ fun VillageListScreen(
             }
         },
         floatingActionButton = {
-            LargeFloatingActionButton(
+            FloatingActionButton(
                 onClick = { showAddDialog = true },
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
-                Icon(Icons.Rounded.Add, contentDescription = "Add Village", modifier = Modifier.size(36.dp))
+                Icon(Icons.Rounded.Add, contentDescription = "Add Village", modifier = Modifier.size(24.dp))
             }
         }
     ) { padding ->
