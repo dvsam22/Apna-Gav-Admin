@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.apnagavadmin.data.model.Village
 import com.example.apnagavadmin.ui.hubs.PrimaryTeal
 
@@ -27,24 +28,49 @@ fun VillageListScreen(
     var showAddDialog by remember { mutableStateOf(false) }
 
     Scaffold(
+        contentWindowInsets = WindowInsets.navigationBars,
         topBar = {
-            TopAppBar(
-                title = { Text("Apna Gav Admin", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
-                actions = {
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 3.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .windowInsetsPadding(TopAppBarDefaults.windowInsets)
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp, top = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Apna Gav Admin",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                     TextField(
                         value = state.searchQuery,
                         onValueChange = { viewModel.onSearchQueryChange(it) },
-                        placeholder = { Text("Search Village...") },
-                        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                        placeholder = { Text("Search Village...", style = MaterialTheme.typography.bodyMedium) },
+                        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
                         colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
                         ),
-                        modifier = Modifier.width(200.dp).padding(end = 8.dp),
-                        shape = MaterialTheme.shapes.medium
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .heightIn(min = 44.dp, max = 48.dp),
+                        shape = MaterialTheme.shapes.medium,
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium
                     )
                 }
-            )
+            }
         },
         floatingActionButton = {
             LargeFloatingActionButton(
@@ -56,16 +82,21 @@ fun VillageListScreen(
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Box(modifier = Modifier.fillMaxSize()) {
             if (state.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center).padding(padding))
             } else if (state.error != null) {
-                Text(state.error ?: "Unknown error", color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center))
+                Text(state.error ?: "Unknown error", color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center).padding(padding))
             } else {
                 val filteredVillages = state.villages.filter { it.villageName.contains(state.searchQuery, ignoreCase = true) }
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        top = padding.calculateTopPadding() + 16.dp,
+                        end = 16.dp,
+                        bottom = padding.calculateBottomPadding() + 16.dp
+                    ),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {

@@ -12,8 +12,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 // Target Green for "Call Now"
 val CallNowGreen = Color(0xFF42C18E)
@@ -31,36 +33,62 @@ fun HubScaffold(
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
+        contentWindowInsets = WindowInsets.navigationBars,
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(title, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-                        if (subtitle != null) {
-                            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 3.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .windowInsetsPadding(TopAppBarDefaults.windowInsets)
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp, top = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                title,
+                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 18.sp),
+                                maxLines = 1
+                            )
+                            if (subtitle != null) {
+                                Text(
+                                    subtitle,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
                         }
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
                     TextField(
                         value = searchQuery,
                         onValueChange = onSearchQueryChange,
-                        placeholder = { Text("Search...") },
-                        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                        placeholder = { Text("Search...", style = MaterialTheme.typography.bodyMedium) },
+                        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
                         colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
                         ),
-                        modifier = Modifier.width(180.dp).padding(end = 8.dp),
-                        shape = MaterialTheme.shapes.medium
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .heightIn(min = 44.dp, max = 48.dp),
+                        shape = MaterialTheme.shapes.medium,
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyMedium
                     )
                 }
-            )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -80,18 +108,24 @@ fun <T> HubList(
     items: List<T>,
     isLoading: Boolean,
     error: String?,
-    contentPadding: PaddingValues = PaddingValues(16.dp),
+    contentPadding: PaddingValues = PaddingValues(0.dp),
     itemContent: @Composable (T) -> Unit
 ) {
+    val combinedPadding = PaddingValues(
+        start = 16.dp + contentPadding.calculateStartPadding(LocalLayoutDirection.current),
+        top = 16.dp + contentPadding.calculateTopPadding(),
+        end = 16.dp + contentPadding.calculateEndPadding(LocalLayoutDirection.current),
+        bottom = 16.dp + contentPadding.calculateBottomPadding()
+    )
     Box(modifier = Modifier.fillMaxSize()) {
         if (isLoading) {
-            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center).padding(contentPadding))
         } else if (error != null) {
-            Text(error, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center))
+            Text(error, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center).padding(contentPadding))
         } else {
             androidx.compose.foundation.lazy.LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = contentPadding,
+                contentPadding = combinedPadding,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(items.size) { index ->

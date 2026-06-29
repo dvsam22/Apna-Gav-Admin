@@ -23,8 +23,10 @@ fun VillageDetailsScreen(
     onNavigateToHub: (String) -> Unit
 ) {
     Scaffold(
+        contentWindowInsets = WindowInsets.navigationBars,
         topBar = {
             TopAppBar(
+                windowInsets = TopAppBarDefaults.windowInsets,
                 title = { Text("Village Management", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -37,7 +39,12 @@ fun VillageDetailsScreen(
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             modifier = Modifier.fillMaxSize(),
-            contentPadding = padding,
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                top = padding.calculateTopPadding() + 16.dp,
+                end = 16.dp,
+                bottom = padding.calculateBottomPadding() + 16.dp
+            ),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {

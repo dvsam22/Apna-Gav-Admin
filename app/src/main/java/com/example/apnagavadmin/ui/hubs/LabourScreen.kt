@@ -77,9 +77,11 @@ fun LabourBoardMainScreen(
     onCategoryClick: (LabourCategory) -> Unit
 ) {
     Scaffold(
+        contentWindowInsets = WindowInsets.navigationBars,
         topBar = {
             @OptIn(ExperimentalMaterial3Api::class)
             TopAppBar(
+                windowInsets = TopAppBarDefaults.windowInsets,
                 title = { Text("Labour Board") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -91,7 +93,12 @@ fun LabourBoardMainScreen(
     ) { padding ->
         androidx.compose.foundation.lazy.LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = padding,
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                top = padding.calculateTopPadding() + 16.dp,
+                end = 16.dp,
+                bottom = padding.calculateBottomPadding() + 16.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item { Spacer(Modifier.height(16.dp)) } // Top margin within the scroll area

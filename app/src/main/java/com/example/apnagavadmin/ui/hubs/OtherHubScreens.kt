@@ -51,15 +51,23 @@ fun ConstructionScreen(viewModel: ConstructionViewModel, onBack: () -> Unit) {
 @Composable
 fun ConstructionHubMainScreen(onBack: () -> Unit, onCategoryClick: (String) -> Unit) {
     Scaffold(
+        contentWindowInsets = WindowInsets.navigationBars,
         topBar = {
             @OptIn(ExperimentalMaterial3Api::class)
-            TopAppBar(title = { Text("Construction Hub", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+            TopAppBar(
+                windowInsets = TopAppBarDefaults.windowInsets,
+                title = { Text("Construction Hub", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } })
         }
     ) { padding ->
         androidx.compose.foundation.lazy.LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = padding,
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                top = padding.calculateTopPadding() + 16.dp,
+                end = 16.dp,
+                bottom = padding.calculateBottomPadding() + 16.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item { Spacer(Modifier.height(16.dp)) }
@@ -102,15 +110,23 @@ fun TransportScreen(viewModel: TransportViewModel, onBack: () -> Unit) {
 @Composable
 fun TransportHubMainScreen(onBack: () -> Unit, onCategoryClick: (String) -> Unit) {
     Scaffold(
+        contentWindowInsets = WindowInsets.navigationBars,
         topBar = {
             @OptIn(ExperimentalMaterial3Api::class)
-            TopAppBar(title = { Text("Transport & Rentals", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+            TopAppBar(
+                windowInsets = TopAppBarDefaults.windowInsets,
+                title = { Text("Transport & Rentals", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } })
         }
     ) { padding ->
         androidx.compose.foundation.lazy.LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = padding,
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                top = padding.calculateTopPadding() + 16.dp,
+                end = 16.dp,
+                bottom = padding.calculateBottomPadding() + 16.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item { Spacer(Modifier.height(16.dp)) }
