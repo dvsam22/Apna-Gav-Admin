@@ -62,7 +62,8 @@ fun VillageDetailsScreen(
                 ServiceItem("Mandi Prices", Icons.Rounded.Info, "mandi"),
                 ServiceItem("Health Hub", Icons.Rounded.Favorite, "health"),
                 ServiceItem("Village News", Icons.Rounded.Notifications, "news"),
-                ServiceItem("Banners", Icons.Rounded.Star, "banners")
+                ServiceItem("Banners", Icons.Rounded.Star, "banners"),
+                ServiceItem("Notifications", Icons.Rounded.NotificationsActive, "notifications")
             )
 
             items(services) { service ->

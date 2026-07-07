@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ApnaGavAdmin"
+rootProject.name = "Base"
 include(":app")

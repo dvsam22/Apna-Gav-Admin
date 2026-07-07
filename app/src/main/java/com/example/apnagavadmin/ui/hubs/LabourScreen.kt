@@ -12,14 +12,19 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.example.apnagavadmin.data.model.LabourCategory
 import com.example.apnagavadmin.data.model.LabourProvider
+import com.example.apnagavadmin.data.model.Village
 
 @Composable
 fun LabourScreen(
     viewModel: LabourViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    villages: List<Village> = emptyList(),
+    selectedVillageId: String = "",
+    onVillageChange: (String) -> Unit = {}
 ) {
     val state by viewModel.state.collectAsState()
     var selectedCategory by remember { mutableStateOf<LabourCategory?>(null) }
+    var editingItem by remember { mutableStateOf<LabourProvider?>(null) }
     var showAddDialog by remember { mutableStateOf(false) }
 
     if (selectedCategory == null) {
@@ -36,9 +41,12 @@ fun LabourScreen(
             title = "${selectedCategory?.name} Details",
             subtitle = "${state.items.size} Available",
             onBack = { selectedCategory = null },
-            onAdd = { showAddDialog = true },
+            onAdd = { editingItem = null; showAddDialog = true },
             searchQuery = state.searchQuery,
-            onSearchQueryChange = { viewModel.onSearchQueryChange(it) }
+            onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
+            villages = villages,
+            selectedVillageId = selectedVillageId,
+            onVillageChange = onVillageChange
         ) { padding ->
             HubList(
                 items = state.items.filter { it.name.contains(state.searchQuery, true) },
@@ -53,16 +61,19 @@ fun LabourScreen(
                         Icons.Rounded.Build to "Skills: ${provider.skills}",
                         Icons.Rounded.Info to "Charges: ${provider.charges}"
                     ),
-                    onDelete = { viewModel.deleteProvider(provider.id) }
+                    onEdit = { editingItem = provider; showAddDialog = true },
+                    onDelete = { viewModel.deleteProvider(provider) }
                 )
             }
 
             if (showAddDialog) {
                 AddLabourerDialog(
-                    onDismiss = { showAddDialog = false },
+                    item = editingItem,
+                    onDismiss = { showAddDialog = false; editingItem = null },
                     onSave = {
                         viewModel.saveProvider(it)
                         showAddDialog = false
+                        editingItem = null
                     }
                 )
             }
@@ -117,16 +128,16 @@ fun LabourBoardMainScreen(
 }
 
 @Composable
-fun AddLabourerDialog(onDismiss: () -> Unit, onSave: (LabourProvider) -> Unit) {
-    var name by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
-    var contact by remember { mutableStateOf("") }
-    var skills by remember { mutableStateOf("") }
-    var charges by remember { mutableStateOf("") }
+fun AddLabourerDialog(item: LabourProvider? = null, onDismiss: () -> Unit, onSave: (LabourProvider) -> Unit) {
+    var name by remember { mutableStateOf(item?.name ?: "") }
+    var location by remember { mutableStateOf(item?.location ?: "") }
+    var contact by remember { mutableStateOf(item?.contact ?: "") }
+    var skills by remember { mutableStateOf(item?.skills ?: "") }
+    var charges by remember { mutableStateOf(item?.charges ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Labourer") },
+        title = { Text(if (item == null) "Add Labourer" else "Edit Labourer") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
@@ -137,7 +148,9 @@ fun AddLabourerDialog(onDismiss: () -> Unit, onSave: (LabourProvider) -> Unit) {
             }
         },
         confirmButton = {
-            Button(onClick = { onSave(LabourProvider(name = name, location = location, contact = contact, skills = skills, charges = charges)) }) {
+            Button(onClick = { 
+                onSave(item?.copy(name = name, location = location, contact = contact, skills = skills, charges = charges) ?: LabourProvider(name = name, location = location, contact = contact, skills = skills, charges = charges)) 
+            }) {
                 Text("Save")
             }
         },

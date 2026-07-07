@@ -21,36 +21,49 @@ class LabourRepository(private val firestore: FirebaseFirestore = FirebaseFirest
 
     fun getProviders(villageId: String, categoryId: String): Flow<Resource<List<LabourProvider>>> = callbackFlow {
         trySend(Resource.Loading())
-        val subscription = firestore.collection("villages").document(villageId)
-            .collection("labour").whereEqualTo("categoryId", categoryId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(Resource.Error(error.message ?: "Error"))
-                    return@addSnapshotListener
-                }
-                val providers = snapshot?.documents?.mapNotNull { doc ->
-                    try {
-                        doc.toObject(LabourProvider::class.java)?.copy(id = doc.id)
-                    } catch (e: Exception) {
-                        null
-                    }
-                } ?: emptyList()
-                trySend(Resource.Success(providers))
+        val query = if (villageId == "all") {
+            firestore.collectionGroup("labour")
+        } else {
+            firestore.collection("villages").document(villageId).collection("labour").whereEqualTo("categoryId", categoryId)
+        }
+        val subscription = query.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                android.util.Log.e("FirestoreError", "Index required: ${error.message}")
+                trySend(Resource.Error(error.message ?: "Error"))
+                return@addSnapshotListener
             }
+            val providers = snapshot?.documents?.mapNotNull { doc ->
+                try {
+                    doc.toObject(LabourProvider::class.java)?.copy(id = doc.id)
+                } catch (e: Exception) {
+                    null
+                }
+            } ?: emptyList()
+            
+            val filtered = if (villageId == "all") {
+                providers.filter { it.categoryId == categoryId }
+            } else {
+                providers
+            }
+            trySend(Resource.Success(filtered))
+        }
         awaitClose { subscription.remove() }
     }
 
-    suspend fun saveProvider(villageId: String, provider: LabourProvider): Resource<Unit> = try {
+    suspend fun saveProvider(actualVillageId: String, provider: LabourProvider): Resource<Unit> = try {
+        val vId = if (actualVillageId == "all") provider.villageId else actualVillageId
+        if (vId.isEmpty() || vId == "all") throw Exception("Invalid Village ID")
+        
         if (provider.id.isEmpty()) {
-            firestore.collection("villages").document(villageId).collection("labour").add(provider).await()
+            firestore.collection("villages").document(vId).collection("labour").add(provider.copy(villageId = vId)).await()
         } else {
-            firestore.collection("villages").document(villageId).collection("labour").document(provider.id).set(provider).await()
+            firestore.collection("villages").document(vId).collection("labour").document(provider.id).set(provider.copy(villageId = vId)).await()
         }
         Resource.Success(Unit)
     } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
 
-    suspend fun deleteProvider(villageId: String, providerId: String): Resource<Unit> = try {
-        firestore.collection("villages").document(villageId).collection("labour").document(providerId).delete().await()
+    suspend fun deleteProvider(actualVillageId: String, providerId: String): Resource<Unit> = try {
+        firestore.collection("villages").document(actualVillageId).collection("labour").document(providerId).delete().await()
         Resource.Success(Unit)
     } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
 }
@@ -58,11 +71,16 @@ class LabourRepository(private val firestore: FirebaseFirestore = FirebaseFirest
 class ConstructionRepository(private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()) {
     fun getHubs(villageId: String, categoryId: String? = null): Flow<Resource<List<ConstructionHub>>> = callbackFlow {
         trySend(Resource.Loading())
-        val baseQuery = firestore.collection("villages").document(villageId).collection("construction")
-        val finalQuery = if (categoryId != null) baseQuery.whereEqualTo("categoryId", categoryId) else baseQuery
+        val baseQuery = if (villageId == "all") {
+            firestore.collectionGroup("construction")
+        } else {
+            val q = firestore.collection("villages").document(villageId).collection("construction")
+            if (categoryId != null) q.whereEqualTo("categoryId", categoryId) else q
+        }
 
-        val subscription = finalQuery.addSnapshotListener { snapshot, error ->
+        val subscription = baseQuery.addSnapshotListener { snapshot, error ->
             if (error != null) {
+                android.util.Log.e("FirestoreError", "Index required: ${error.message}")
                 trySend(Resource.Error(error.message ?: "Error"))
                 return@addSnapshotListener
             }
@@ -73,22 +91,31 @@ class ConstructionRepository(private val firestore: FirebaseFirestore = Firebase
                     null
                 }
             } ?: emptyList()
-            trySend(Resource.Success(hubs))
+            
+            val filtered = if (villageId == "all" && categoryId != null) {
+                hubs.filter { it.categoryId == categoryId }
+            } else {
+                hubs
+            }
+            trySend(Resource.Success(filtered))
         }
         awaitClose { subscription.remove() }
     }
 
-    suspend fun saveHub(villageId: String, hub: ConstructionHub): Resource<Unit> = try {
+    suspend fun saveHub(actualVillageId: String, hub: ConstructionHub): Resource<Unit> = try {
+        val vId = if (actualVillageId == "all") hub.villageId else actualVillageId
+        if (vId.isEmpty() || vId == "all") throw Exception("Invalid Village ID")
+
         if (hub.id.isEmpty()) {
-            firestore.collection("villages").document(villageId).collection("construction").add(hub).await()
+            firestore.collection("villages").document(vId).collection("construction").add(hub.copy(villageId = vId)).await()
         } else {
-            firestore.collection("villages").document(villageId).collection("construction").document(hub.id).set(hub).await()
+            firestore.collection("villages").document(vId).collection("construction").document(hub.id).set(hub.copy(villageId = vId)).await()
         }
         Resource.Success(Unit)
     } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
 
-    suspend fun deleteHub(villageId: String, hubId: String): Resource<Unit> = try {
-        firestore.collection("villages").document(villageId).collection("construction").document(hubId).delete().await()
+    suspend fun deleteHub(actualVillageId: String, hubId: String): Resource<Unit> = try {
+        firestore.collection("villages").document(actualVillageId).collection("construction").document(hubId).delete().await()
         Resource.Success(Unit)
     } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
 }
@@ -96,11 +123,16 @@ class ConstructionRepository(private val firestore: FirebaseFirestore = Firebase
 class TransportRepository(private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()) {
     fun getHubs(villageId: String, categoryId: String? = null): Flow<Resource<List<TransportHub>>> = callbackFlow {
         trySend(Resource.Loading())
-        val baseQuery = firestore.collection("villages").document(villageId).collection("transport")
-        val finalQuery = if (categoryId != null) baseQuery.whereEqualTo("categoryId", categoryId) else baseQuery
+        val baseQuery = if (villageId == "all") {
+            firestore.collectionGroup("transport")
+        } else {
+            val q = firestore.collection("villages").document(villageId).collection("transport")
+            if (categoryId != null) q.whereEqualTo("categoryId", categoryId) else q
+        }
 
-        val subscription = finalQuery.addSnapshotListener { snapshot, error ->
+        val subscription = baseQuery.addSnapshotListener { snapshot, error ->
             if (error != null) {
+                android.util.Log.e("FirestoreError", "Index required: ${error.message}")
                 trySend(Resource.Error(error.message ?: "Error"))
                 return@addSnapshotListener
             }
@@ -111,76 +143,123 @@ class TransportRepository(private val firestore: FirebaseFirestore = FirebaseFir
                     null
                 }
             } ?: emptyList()
-            trySend(Resource.Success(hubs))
+            
+            val filtered = if (villageId == "all" && categoryId != null) {
+                hubs.filter { it.categoryId == categoryId }
+            } else {
+                hubs
+            }
+            trySend(Resource.Success(filtered))
         }
         awaitClose { subscription.remove() }
     }
 
-    suspend fun saveHub(villageId: String, hub: TransportHub): Resource<Unit> = try {
+    suspend fun saveHub(actualVillageId: String, hub: TransportHub): Resource<Unit> = try {
+        val vId = if (actualVillageId == "all") hub.villageId else actualVillageId
+        if (vId.isEmpty() || vId == "all") throw Exception("Invalid Village ID")
+
         if (hub.id.isEmpty()) {
-            firestore.collection("villages").document(villageId).collection("transport").add(hub).await()
+            firestore.collection("villages").document(vId).collection("transport").add(hub.copy(villageId = vId)).await()
         } else {
-            firestore.collection("villages").document(villageId).collection("transport").document(hub.id).set(hub).await()
+            firestore.collection("villages").document(vId).collection("transport").document(hub.id).set(hub.copy(villageId = vId)).await()
         }
         Resource.Success(Unit)
     } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
 
-    suspend fun deleteHub(villageId: String, hubId: String): Resource<Unit> = try {
-        firestore.collection("villages").document(villageId).collection("transport").document(hubId).delete().await()
+    suspend fun deleteHub(actualVillageId: String, hubId: String): Resource<Unit> = try {
+        firestore.collection("villages").document(actualVillageId).collection("transport").document(hubId).delete().await()
         Resource.Success(Unit)
     } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
 }
 
 class MandiRepository(private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()) {
-    fun getPrices(villageId: String): Flow<Resource<List<MandiPrice>>> = callbackFlow {
+    fun getPrices(villageId: String, categoryId: String? = null): Flow<Resource<List<MandiPrice>>> = callbackFlow {
         trySend(Resource.Loading())
-        val subscription = firestore.collection("villages").document(villageId).collection("mandi")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) { trySend(Resource.Error(error.message ?: "Error")); return@addSnapshotListener }
-                val prices = snapshot?.documents?.mapNotNull { it.toObject(MandiPrice::class.java)?.copy(id = it.id) } ?: emptyList()
-                trySend(Resource.Success(prices))
+        val baseQuery = if (villageId == "all") {
+            firestore.collectionGroup("mandi")
+        } else {
+            val q = firestore.collection("villages").document(villageId).collection("mandi")
+            if (categoryId != null) q.whereEqualTo("categoryId", categoryId) else q
+        }
+        
+        val subscription = baseQuery.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                android.util.Log.e("FirestoreError", "Index required: ${error.message}")
+                trySend(Resource.Error(error.message ?: "Error"))
+                return@addSnapshotListener
             }
+            val prices = snapshot?.documents?.mapNotNull { it.toObject(MandiPrice::class.java)?.copy(id = it.id) } ?: emptyList()
+            
+            val filtered = if (villageId == "all" && categoryId != null) {
+                prices.filter { it.categoryId == categoryId }
+            } else {
+                prices
+            }
+            trySend(Resource.Success(filtered))
+        }
         awaitClose { subscription.remove() }
     }
 
-    suspend fun savePrice(villageId: String, price: MandiPrice): Resource<Unit> = try {
+    suspend fun savePrice(actualVillageId: String, price: MandiPrice): Resource<Unit> = try {
+        val vId = if (actualVillageId == "all") price.villageId else actualVillageId
+        if (vId.isEmpty() || vId == "all") throw Exception("Invalid Village ID")
+
         if (price.id.isEmpty()) {
-            firestore.collection("villages").document(villageId).collection("mandi").add(price).await()
+            firestore.collection("villages").document(vId).collection("mandi").add(price.copy(villageId = vId)).await()
         } else {
-            firestore.collection("villages").document(villageId).collection("mandi").document(price.id).set(price).await()
+            firestore.collection("villages").document(vId).collection("mandi").document(price.id).set(price.copy(villageId = vId)).await()
         }
         Resource.Success(Unit)
     } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
 
-    suspend fun deletePrice(villageId: String, priceId: String): Resource<Unit> = try {
-        firestore.collection("villages").document(villageId).collection("mandi").document(priceId).delete().await()
+    suspend fun deletePrice(actualVillageId: String, priceId: String): Resource<Unit> = try {
+        firestore.collection("villages").document(actualVillageId).collection("mandi").document(priceId).delete().await()
         Resource.Success(Unit)
     } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
 }
 
 class HealthRepository(private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()) {
-    fun getHubs(villageId: String): Flow<Resource<List<HealthHub>>> = callbackFlow {
+    fun getHubs(villageId: String, categoryId: String? = null): Flow<Resource<List<HealthHub>>> = callbackFlow {
         trySend(Resource.Loading())
-        val subscription = firestore.collection("villages").document(villageId).collection("health")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) { trySend(Resource.Error(error.message ?: "Error")); return@addSnapshotListener }
-                val hubs = snapshot?.documents?.mapNotNull { it.toObject(HealthHub::class.java)?.copy(id = it.id) } ?: emptyList()
-                trySend(Resource.Success(hubs))
+        val baseQuery = if (villageId == "all") {
+            firestore.collectionGroup("health")
+        } else {
+            val q = firestore.collection("villages").document(villageId).collection("health")
+            if (categoryId != null) q.whereEqualTo("categoryId", categoryId) else q
+        }
+
+        val subscription = baseQuery.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                android.util.Log.e("FirestoreError", "Index required: ${error.message}")
+                trySend(Resource.Error(error.message ?: "Error"))
+                return@addSnapshotListener
             }
+            val hubs = snapshot?.documents?.mapNotNull { it.toObject(HealthHub::class.java)?.copy(id = it.id) } ?: emptyList()
+            
+            val filtered = if (villageId == "all" && categoryId != null) {
+                hubs.filter { it.categoryId == categoryId }
+            } else {
+                hubs
+            }
+            trySend(Resource.Success(filtered))
+        }
         awaitClose { subscription.remove() }
     }
 
-    suspend fun saveHub(villageId: String, hub: HealthHub): Resource<Unit> = try {
+    suspend fun saveHub(actualVillageId: String, hub: HealthHub): Resource<Unit> = try {
+        val vId = if (actualVillageId == "all") hub.villageId else actualVillageId
+        if (vId.isEmpty() || vId == "all") throw Exception("Invalid Village ID")
+
         if (hub.id.isEmpty()) {
-            firestore.collection("villages").document(villageId).collection("health").add(hub).await()
+            firestore.collection("villages").document(vId).collection("health").add(hub.copy(villageId = vId)).await()
         } else {
-            firestore.collection("villages").document(villageId).collection("health").document(hub.id).set(hub).await()
+            firestore.collection("villages").document(vId).collection("health").document(hub.id).set(hub.copy(villageId = vId)).await()
         }
         Resource.Success(Unit)
     } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
 
-    suspend fun deleteHub(villageId: String, hubId: String): Resource<Unit> = try {
-        firestore.collection("villages").document(villageId).collection("health").document(hubId).delete().await()
+    suspend fun deleteHub(actualVillageId: String, hubId: String): Resource<Unit> = try {
+        firestore.collection("villages").document(actualVillageId).collection("health").document(hubId).delete().await()
         Resource.Success(Unit)
     } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
 }

@@ -3,7 +3,10 @@ package com.example.apnagavadmin.ui.village
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.*
@@ -13,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.apnagavadmin.data.model.Village
@@ -153,6 +157,9 @@ fun VillageItem(
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(village.villageName, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                if (village.sarpanchName.isNotEmpty()) {
+                    Text("Sarpanch: ${village.sarpanchName}", style = MaterialTheme.typography.bodySmall, color = PrimaryTeal)
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.LocationOn, contentDescription = null, modifier = Modifier.size(14.dp), tint = PrimaryTeal)
                     Spacer(Modifier.width(4.dp))
@@ -178,23 +185,53 @@ fun AddEditVillageDialog(
     onSave: (Village) -> Unit
 ) {
     var name by remember { mutableStateOf(village?.villageName ?: "") }
+    var sarpanchName by remember { mutableStateOf(village?.sarpanchName ?: "") }
     var district by remember { mutableStateOf(village?.district ?: "") }
     var state by remember { mutableStateOf(village?.state ?: "") }
     var pincode by remember { mutableStateOf(village?.pincode ?: "") }
+    var lat by remember { mutableStateOf(village?.lat?.toString() ?: "") }
+    var lng by remember { mutableStateOf(village?.lng?.toString() ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (village == null) "Add Village" else "Edit Village") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Village Name") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = sarpanchName, onValueChange = { sarpanchName = it }, label = { Text("Sarpanch Name") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = district, onValueChange = { district = it }, label = { Text("District") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = state, onValueChange = { state = it }, label = { Text("State") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = pincode, onValueChange = { pincode = it }, label = { Text("Pincode") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = pincode, onValueChange = { pincode = it }, label = { Text("Pincode") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(value = lat, onValueChange = { lat = it }, label = { Text("Latitude") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                    OutlinedTextField(value = lng, onValueChange = { lng = it }, label = { Text("Longitude") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+                }
             }
         },
         confirmButton = {
-            Button(onClick = { onSave(village?.copy(villageName = name, district = district, state = state, pincode = pincode) ?: Village(villageName = name, district = district, state = state, pincode = pincode)) }) {
+            Button(onClick = {
+                val updatedVillage = village?.copy(
+                    villageName = name,
+                    sarpanchName = sarpanchName,
+                    district = district,
+                    state = state,
+                    pincode = pincode,
+                    lat = lat.toDoubleOrNull() ?: 0.0,
+                    lng = lng.toDoubleOrNull() ?: 0.0
+                ) ?: Village(
+                    villageName = name,
+                    sarpanchName = sarpanchName,
+                    district = district,
+                    state = state,
+                    pincode = pincode,
+                    lat = lat.toDoubleOrNull() ?: 0.0,
+                    lng = lng.toDoubleOrNull() ?: 0.0
+                )
+                onSave(updatedVillage)
+            }) {
                 Text("Save")
             }
         },

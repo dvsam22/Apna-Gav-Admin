@@ -7,6 +7,8 @@ import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -30,6 +32,32 @@ fun ApnaGavNavHost(
 ) {
     val saveableStateHolder = rememberSaveableStateHolder()
     val viewModelStoreProvider = rememberViewModelStoreProvider()
+
+    // Global Village State
+    val villageViewModel: VillageViewModel = viewModel()
+    val villageState by villageViewModel.state.collectAsState()
+    val villages = villageState.villages
+
+    val onVillageChange: (String) -> Unit = { newVillageId ->
+        val last = backStack.lastOrNull()
+        if (last != null) {
+            val updatedRoute = when (last) {
+                is NavRoute.LabourHub -> last.copy(villageId = newVillageId)
+                is NavRoute.ConstructionHub -> last.copy(villageId = newVillageId)
+                is NavRoute.TransportHub -> last.copy(villageId = newVillageId)
+                is NavRoute.MandiHub -> last.copy(villageId = newVillageId)
+                is NavRoute.HealthHub -> last.copy(villageId = newVillageId)
+                is NavRoute.NewsHub -> last.copy(villageId = newVillageId)
+                is NavRoute.BannerHub -> last.copy(villageId = newVillageId)
+                is NavRoute.NotificationHub -> last.copy(villageId = newVillageId)
+                is NavRoute.VillageDetails -> last.copy(villageId = newVillageId)
+                else -> last
+            }
+            if (updatedRoute != last) {
+                backStack[backStack.size - 1] = updatedRoute
+            }
+        }
+    }
 
     val decorators = remember(saveableStateHolder, viewModelStoreProvider) {
         listOf(
@@ -76,6 +104,7 @@ fun ApnaGavNavHost(
                             "health" -> NavRoute.HealthHub(route.villageId)
                             "news" -> NavRoute.NewsHub(route.villageId)
                             "banners" -> NavRoute.BannerHub(route.villageId)
+                            "notifications" -> NavRoute.NotificationHub(route.villageId)
                             else -> null
                         }
                         nextRoute?.let { backStack.add(it) }
@@ -83,25 +112,76 @@ fun ApnaGavNavHost(
                 )
             }
             entry<NavRoute.LabourHub>(metadata = ListDetailSceneStrategy.detailPane()) { route ->
-                LabourScreen(viewModel = viewModel { LabourViewModel(villageId = route.villageId) }, onBack = { backStack.removeLastOrNull() })
+                LabourScreen(
+                    viewModel = viewModel(key = "Labour_${route.villageId}") { LabourViewModel(villageId = route.villageId) },
+                    onBack = { backStack.removeLastOrNull() },
+                    villages = villages,
+                    selectedVillageId = route.villageId,
+                    onVillageChange = onVillageChange
+                )
             }
             entry<NavRoute.ConstructionHub>(metadata = ListDetailSceneStrategy.detailPane()) { route ->
-                ConstructionScreen(viewModel = viewModel { ConstructionViewModel(villageId = route.villageId) }, onBack = { backStack.removeLastOrNull() })
+                ConstructionScreen(
+                    viewModel = viewModel(key = "Construction_${route.villageId}") { ConstructionViewModel(villageId = route.villageId) },
+                    onBack = { backStack.removeLastOrNull() },
+                    villages = villages,
+                    selectedVillageId = route.villageId,
+                    onVillageChange = onVillageChange
+                )
             }
             entry<NavRoute.TransportHub>(metadata = ListDetailSceneStrategy.detailPane()) { route ->
-                TransportScreen(viewModel = viewModel { TransportViewModel(villageId = route.villageId) }, onBack = { backStack.removeLastOrNull() })
+                TransportScreen(
+                    viewModel = viewModel(key = "Transport_${route.villageId}") { TransportViewModel(villageId = route.villageId) },
+                    onBack = { backStack.removeLastOrNull() },
+                    villages = villages,
+                    selectedVillageId = route.villageId,
+                    onVillageChange = onVillageChange
+                )
             }
             entry<NavRoute.MandiHub>(metadata = ListDetailSceneStrategy.detailPane()) { route ->
-                MandiScreen(viewModel = viewModel { MandiViewModel(villageId = route.villageId) }, onBack = { backStack.removeLastOrNull() })
+                MandiScreen(
+                    viewModel = viewModel(key = "Mandi_${route.villageId}") { MandiViewModel(villageId = route.villageId) },
+                    onBack = { backStack.removeLastOrNull() },
+                    villages = villages,
+                    selectedVillageId = route.villageId,
+                    onVillageChange = onVillageChange
+                )
             }
             entry<NavRoute.HealthHub>(metadata = ListDetailSceneStrategy.detailPane()) { route ->
-                HealthScreen(viewModel = viewModel { HealthViewModel(villageId = route.villageId) }, onBack = { backStack.removeLastOrNull() })
+                HealthScreen(
+                    viewModel = viewModel(key = "Health_${route.villageId}") { HealthViewModel(villageId = route.villageId) },
+                    onBack = { backStack.removeLastOrNull() },
+                    villages = villages,
+                    selectedVillageId = route.villageId,
+                    onVillageChange = onVillageChange
+                )
             }
             entry<NavRoute.NewsHub>(metadata = ListDetailSceneStrategy.detailPane()) { route ->
-                NewsScreen(viewModel = viewModel { NewsViewModel(villageId = route.villageId) }, onBack = { backStack.removeLastOrNull() })
+                NewsScreen(
+                    viewModel = viewModel(key = "News_${route.villageId}") { NewsViewModel(villageId = route.villageId) },
+                    onBack = { backStack.removeLastOrNull() },
+                    villages = villages,
+                    selectedVillageId = route.villageId,
+                    onVillageChange = onVillageChange
+                )
             }
             entry<NavRoute.BannerHub>(metadata = ListDetailSceneStrategy.detailPane()) { route ->
-                BannerScreen(viewModel = viewModel { BannerViewModel(villageId = route.villageId) }, onBack = { backStack.removeLastOrNull() })
+                BannerScreen(
+                    viewModel = viewModel(key = "Banner_${route.villageId}") { BannerViewModel(villageId = route.villageId) },
+                    onBack = { backStack.removeLastOrNull() },
+                    villages = villages,
+                    selectedVillageId = route.villageId,
+                    onVillageChange = onVillageChange
+                )
+            }
+            entry<NavRoute.NotificationHub>(metadata = ListDetailSceneStrategy.detailPane()) { route ->
+                NotificationScreen(
+                    viewModel = viewModel(key = "Notification_${route.villageId}") { NotificationViewModel(villageId = route.villageId) },
+                    onBack = { backStack.removeLastOrNull() },
+                    villages = villages,
+                    selectedVillageId = route.villageId,
+                    onVillageChange = onVillageChange
+                )
             }
         }
     )

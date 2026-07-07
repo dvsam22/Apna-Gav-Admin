@@ -30,4 +30,7 @@ sealed interface NavRoute {
 
     @Serializable
     data class BannerHub(val villageId: String) : NavRoute
+
+    @Serializable
+    data class NotificationHub(val villageId: String) : NavRoute
 }

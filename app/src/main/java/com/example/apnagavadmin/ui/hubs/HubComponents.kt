@@ -7,7 +7,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,6 +30,9 @@ fun HubScaffold(
     onAdd: () -> Unit,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
+    villages: List<com.example.apnagavadmin.data.model.Village> = emptyList(),
+    selectedVillageId: String = "",
+    onVillageChange: (String) -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
@@ -67,6 +70,14 @@ fun HubScaffold(
                                 )
                             }
                         }
+                        
+                        if (villages.isNotEmpty()) {
+                            VillageSelector(
+                                villages = villages,
+                                selectedVillageId = selectedVillageId,
+                                onVillageChange = onVillageChange
+                            )
+                        }
                     }
                     TextField(
                         value = searchQuery,
@@ -101,6 +112,56 @@ fun HubScaffold(
         },
         content = content
     )
+}
+
+@Composable
+fun VillageSelector(
+    villages: List<com.example.apnagavadmin.data.model.Village>,
+    selectedVillageId: String,
+    onVillageChange: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedVillage = villages.find { it.id == selectedVillageId }
+    val displayName = selectedVillage?.villageName ?: if (selectedVillageId == "all") "All Villages" else "Select Village"
+
+    Box(modifier = Modifier.padding(end = 8.dp)) {
+        AssistChip(
+            onClick = { expanded = true },
+            label = { Text(displayName, maxLines = 1) },
+            trailingIcon = { Icon(Icons.Rounded.ArrowDropDown, null, modifier = Modifier.size(18.dp)) },
+            colors = AssistChipDefaults.assistChipColors(
+                labelColor = PrimaryTeal,
+                leadingIconContentColor = PrimaryTeal,
+                trailingIconContentColor = PrimaryTeal
+            ),
+            border = AssistChipDefaults.assistChipBorder(enabled = true, borderColor = PrimaryTeal.copy(alpha = 0.3f))
+        )
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("All Villages (Global)") },
+                onClick = {
+                    onVillageChange("all")
+                    expanded = false
+                },
+                leadingIcon = { Icon(Icons.Rounded.Public, null, tint = PrimaryTeal) }
+            )
+            HorizontalDivider()
+            villages.forEach { village ->
+                DropdownMenuItem(
+                    text = { Text(village.villageName) },
+                    onClick = {
+                        onVillageChange(village.id)
+                        expanded = false
+                    },
+                    leadingIcon = { Icon(Icons.Rounded.Home, null, tint = PrimaryTeal) }
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -171,6 +232,8 @@ fun DetailCard(
     location: String,
     details: List<Pair<ImageVector, String>>,
     onDelete: () -> Unit,
+    onEdit: () -> Unit,
+    icon: ImageVector = Icons.Rounded.Person,
     onCallClick: () -> Unit = {}
 ) {
     Card(
@@ -184,10 +247,10 @@ fun DetailCard(
                 Surface(
                     modifier = Modifier.size(48.dp),
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant
+                    color = PrimaryTeal.copy(alpha = 0.1f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Icon(Icons.Rounded.Person, contentDescription = null)
+                        Icon(icon, contentDescription = null, tint = PrimaryTeal)
                     }
                 }
                 Spacer(Modifier.width(12.dp))
@@ -196,35 +259,40 @@ fun DetailCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.LocationOn, contentDescription = null, modifier = Modifier.size(14.dp), tint = PrimaryTeal)
                         Spacer(Modifier.width(4.dp))
-                        Text(location, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(location, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                Row {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Rounded.Edit, contentDescription = "Edit", tint = PrimaryTeal.copy(alpha = 0.6f), modifier = Modifier.size(20.dp))
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f), modifier = Modifier.size(20.dp))
+                    }
                 }
             }
             
             Spacer(Modifier.height(16.dp))
             
             details.forEach { (icon, text) ->
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 4.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 6.dp)) {
                     Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = PrimaryTeal)
                     Spacer(Modifier.width(8.dp))
-                    Text(text, style = MaterialTheme.typography.bodyMedium)
+                    Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f))
                 }
             }
             
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
             
             Button(
                 onClick = onCallClick,
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = MaterialTheme.shapes.medium,
                 colors = ButtonDefaults.buttonColors(containerColor = CallNowGreen)
             ) {
-                Icon(Icons.Rounded.Call, contentDescription = null)
+                Icon(Icons.Rounded.Call, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Call Now")
+                Text("Call Now", style = MaterialTheme.typography.labelLarge)
             }
         }
     }

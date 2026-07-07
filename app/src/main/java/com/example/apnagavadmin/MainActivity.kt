@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import com.example.apnagavadmin.navigation.NavRoute
 import com.example.apnagavadmin.ui.navigation.ApnaGavNavHost
 import com.example.apnagavadmin.ui.theme.ApnaGavAdminTheme
+import com.example.apnagavadmin.util.DummyDataGenerator
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,6 +19,10 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
         )
+
+        // Generate dummy data (Remove or comment this after first run)
+        DummyDataGenerator().generateAllData()
+
         setContent {
             ApnaGavAdminTheme {
                 val backStack = remember { mutableStateListOf<NavRoute>(NavRoute.VillageList) }

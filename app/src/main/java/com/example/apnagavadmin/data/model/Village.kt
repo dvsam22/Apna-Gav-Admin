@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class Village(
     val id: String = "",
     val villageName: String = "",
+    val sarpanchName: String = "",
     val district: String = "",
     val state: String = "",
     val pincode: String = "",
