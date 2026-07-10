@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import androidx.compose.ui.res.stringResource
+import com.example.apnagavadmin.R
 import com.example.apnagavadmin.data.model.*
 
 @Composable
@@ -28,41 +30,42 @@ fun ConstructionScreen(
     onBack: () -> Unit,
     villages: List<Village> = emptyList(),
     selectedVillageId: String = "",
-    onVillageChange: (String) -> Unit = {}
+    onVillageChange: (String) -> Unit = {},
+    onNavigateToEdit: (String, ConstructionHub?) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     var selectedCategory by remember { mutableStateOf<String?>(null) }
-    var editingItem by remember { mutableStateOf<ConstructionHub?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
 
     if (selectedCategory == null) {
         ConstructionHubMainScreen(onBack, onCategoryClick = { selectedCategory = it; viewModel.selectCategory(it) })
     } else {
         HubScaffold(
             title = when (selectedCategory) {
-                "bricks" -> "Bricks Suppliers"
-                "hardware_shops" -> "Hardware Shops"
-                else -> "Material Shops"
+                "bricks" -> stringResource(R.string.bricks)
+                "hardware_shops" -> stringResource(R.string.hardware_shops)
+                else -> stringResource(R.string.material_shops)
             },
-            subtitle = "${state.items.size} Available",
+            subtitle = "${state.items.size} ${stringResource(R.string.available)}",
             onBack = { selectedCategory = null },
-            onAdd = { editingItem = null; showDialog = true },
+            onAdd = { onNavigateToEdit(selectedCategory!!, null) },
             searchQuery = state.searchQuery,
             onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
             villages = villages,
             selectedVillageId = selectedVillageId,
             onVillageChange = onVillageChange
         ) { padding ->
-            HubList(state.items.filter { it.shopName.contains(state.searchQuery, true) }, state.isLoading, state.error, contentPadding = padding) { item ->
+            HubList(state.items.filter { 
+                it.shopName.en.contains(state.searchQuery, true) || 
+                it.shopName.hi.contains(state.searchQuery, true) 
+            }, state.isLoading, state.error, contentPadding = padding) { item ->
                 DetailCard(
-                    title = item.shopName,
-                    location = item.address,
-                    details = item.products.map { Icons.Rounded.Build to "${it.name} - ₹${it.price}/${it.unit}" },
-                    onEdit = { editingItem = item; showDialog = true },
+                    title = item.shopName.text(),
+                    location = item.address.text(),
+                    details = item.products.map { Icons.Rounded.Build to "${it.name.text()} - ₹${it.price}/${it.unit.text()}" },
+                    onEdit = { onNavigateToEdit(selectedCategory!!, item) },
                     onDelete = { viewModel.delete(item) }
                 )
             }
-            if (showDialog) AddConstructionHubDialog(editingItem, { showDialog = false; editingItem = null }, { viewModel.save(it); showDialog = false; editingItem = null })
         }
     }
 }
@@ -75,8 +78,8 @@ fun ConstructionHubMainScreen(onBack: () -> Unit, onCategoryClick: (String) -> U
             @OptIn(ExperimentalMaterial3Api::class)
             TopAppBar(
                 windowInsets = TopAppBarDefaults.windowInsets,
-                title = { Text("Construction Hub", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } })
+                title = { Text(stringResource(R.string.construction_hub), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) } })
         }
     ) { padding ->
         androidx.compose.foundation.lazy.LazyColumn(
@@ -90,9 +93,9 @@ fun ConstructionHubMainScreen(onBack: () -> Unit, onCategoryClick: (String) -> U
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item { Spacer(Modifier.height(16.dp)) }
-            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile("Bricks", Icons.Rounded.Build) { onCategoryClick("bricks") } } }
-            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile("Material Shops", Icons.Rounded.ShoppingCart) { onCategoryClick("material_shops") } } }
-            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile("Hardware Shops", Icons.Rounded.Handyman) { onCategoryClick("hardware_shops") } } }
+            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.bricks), Icons.Rounded.Build) { onCategoryClick("bricks") } } }
+            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.material_shops), Icons.Rounded.ShoppingCart) { onCategoryClick("material_shops") } } }
+            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.hardware_shops), Icons.Rounded.Handyman) { onCategoryClick("hardware_shops") } } }
         }
     }
 }
@@ -103,37 +106,45 @@ fun TransportScreen(
     onBack: () -> Unit,
     villages: List<Village> = emptyList(),
     selectedVillageId: String = "",
-    onVillageChange: (String) -> Unit = {}
+    onVillageChange: (String) -> Unit = {},
+    onNavigateToEdit: (String, TransportHub?) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     var selectedCategory by remember { mutableStateOf<String?>(null) }
-    var editingItem by remember { mutableStateOf<TransportHub?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
 
     if (selectedCategory == null) {
         TransportHubMainScreen(onBack, onCategoryClick = { selectedCategory = it; viewModel.selectCategory(it) })
     } else {
         HubScaffold(
-            title = "${selectedCategory?.replaceFirstChar { it.uppercase() }} Providers",
-            subtitle = "${state.items.size} Available",
+            title = when (selectedCategory) {
+                "tractor" -> stringResource(R.string.tractor)
+                "car" -> stringResource(R.string.car)
+                "pickup" -> stringResource(R.string.pickup_truck)
+                "loader" -> stringResource(R.string.loader)
+                "jcb" -> stringResource(R.string.jcb)
+                else -> stringResource(R.string.transport_rentals)
+            },
+            subtitle = "${state.items.size} ${stringResource(R.string.available)}",
             onBack = { selectedCategory = null },
-            onAdd = { editingItem = null; showDialog = true },
+            onAdd = { onNavigateToEdit(selectedCategory!!, null) },
             searchQuery = state.searchQuery,
             onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
             villages = villages,
             selectedVillageId = selectedVillageId,
             onVillageChange = onVillageChange
         ) { padding ->
-            HubList(state.items.filter { it.name.contains(state.searchQuery, true) }, state.isLoading, state.error, contentPadding = padding) { item ->
+            HubList(state.items.filter { 
+                it.name.en.contains(state.searchQuery, true) || 
+                it.name.hi.contains(state.searchQuery, true) 
+            }, state.isLoading, state.error, contentPadding = padding) { item ->
                 DetailCard(
-                    title = item.name,
-                    location = item.location,
-                    details = listOf(Icons.Rounded.Build to "${item.categoryId.replaceFirstChar { it.uppercase() }} Type: ${item.vehicleType}"),
-                    onEdit = { editingItem = item; showDialog = true },
+                    title = item.name.text(),
+                    location = item.location.text(),
+                    details = listOf(Icons.Rounded.Build to "${item.categoryId.replaceFirstChar { it.uppercase() }} Type: ${item.vehicleType.text()}"),
+                    onEdit = { onNavigateToEdit(selectedCategory!!, item) },
                     onDelete = { viewModel.delete(item) }
                 )
             }
-            if (showDialog) AddTransportDialog(editingItem, { showDialog = false; editingItem = null }, { viewModel.save(it); showDialog = false; editingItem = null })
         }
     }
 }
@@ -146,8 +157,8 @@ fun TransportHubMainScreen(onBack: () -> Unit, onCategoryClick: (String) -> Unit
             @OptIn(ExperimentalMaterial3Api::class)
             TopAppBar(
                 windowInsets = TopAppBarDefaults.windowInsets,
-                title = { Text("Transport & Rentals", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } })
+                title = { Text(stringResource(R.string.transport_rentals), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) } })
         }
     ) { padding ->
         androidx.compose.foundation.lazy.LazyColumn(
@@ -161,11 +172,11 @@ fun TransportHubMainScreen(onBack: () -> Unit, onCategoryClick: (String) -> Unit
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item { Spacer(Modifier.height(16.dp)) }
-            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile("Tractor", Icons.Rounded.Agriculture) { onCategoryClick("tractor") } } }
-            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile("Car", Icons.Rounded.DirectionsCar) { onCategoryClick("car") } } }
-            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile("Pickup/ Truck", Icons.Rounded.LocalShipping) { onCategoryClick("pickup") } } }
-            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile("Loader", Icons.Rounded.LocalShipping) { onCategoryClick("loader") } } }
-            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile("JCB", Icons.Rounded.Agriculture) { onCategoryClick("jcb") } } }
+            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.tractor), Icons.Rounded.Agriculture) { onCategoryClick("tractor") } } }
+            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.car), Icons.Rounded.DirectionsCar) { onCategoryClick("car") } } }
+            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.pickup_truck), Icons.Rounded.LocalShipping) { onCategoryClick("pickup") } } }
+            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.loader), Icons.Rounded.LocalShipping) { onCategoryClick("loader") } } }
+            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.jcb), Icons.Rounded.Agriculture) { onCategoryClick("jcb") } } }
         }
     }
 }
@@ -176,27 +187,26 @@ fun MandiScreen(
     onBack: () -> Unit,
     villages: List<Village> = emptyList(),
     selectedVillageId: String = "",
-    onVillageChange: (String) -> Unit = {}
+    onVillageChange: (String) -> Unit = {},
+    onNavigateToEdit: (String, MandiPrice?) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     var selectedCategory by remember { mutableStateOf<String?>(null) }
-    var editingItem by remember { mutableStateOf<MandiPrice?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
 
     if (selectedCategory == null) {
         MandiHubMainScreen(onBack, onCategoryClick = { selectedCategory = it; viewModel.selectCategory(it) })
     } else {
         val title = when (selectedCategory) {
-            "prices" -> "Crop Prices"
-            "market" -> "Today's Market"
-            else -> "Local Buyers"
+            "prices" -> stringResource(R.string.crop_prices)
+            "market" -> stringResource(R.string.todays_market)
+            else -> stringResource(R.string.local_buyers)
         }
 
         HubScaffold(
             title = title,
-            subtitle = "${state.items.size} Available",
+            subtitle = "${state.items.size} ${stringResource(R.string.available)}",
             onBack = { selectedCategory = null },
-            onAdd = { editingItem = null; showDialog = true },
+            onAdd = { onNavigateToEdit(selectedCategory!!, null) },
             searchQuery = state.searchQuery,
             onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
             villages = villages,
@@ -204,17 +214,17 @@ fun MandiScreen(
             onVillageChange = onVillageChange
         ) { padding ->
             val filteredItems = state.items.filter { 
-                (it.cropName.contains(state.searchQuery, true)) || 
-                (it.buyerName.contains(state.searchQuery, true)) 
+                (it.cropName.en.contains(state.searchQuery, true) || it.cropName.hi.contains(state.searchQuery, true)) || 
+                (it.buyerName.en.contains(state.searchQuery, true) || it.buyerName.hi.contains(state.searchQuery, true)) 
             }
 
             if (selectedCategory == "buyers") {
                 HubList(filteredItems, state.isLoading, state.error, contentPadding = padding) { item ->
                     DetailCard(
-                        title = item.buyerName,
-                        location = item.address,
-                        details = listOf(Icons.Rounded.Book to "For: ${item.cropName}"),
-                        onEdit = { editingItem = item; showDialog = true },
+                        title = item.buyerName.text(),
+                        location = item.address.text(),
+                        details = listOf(Icons.Rounded.Book to "For: ${item.cropName.text()}"),
+                        onEdit = { onNavigateToEdit(selectedCategory!!, item) },
                         onDelete = { viewModel.delete(item) }
                     )
                 }
@@ -262,11 +272,11 @@ fun MandiScreen(
                                             modifier = Modifier.fillMaxWidth(),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text(item.cropName, modifier = Modifier.weight(1.2f), style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
-                                            Text(item.unit, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = Color.Gray, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                                            Text(item.cropName.text(), modifier = Modifier.weight(1.2f), style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
+                                            Text(item.unit.text(), modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = Color.Gray, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                                             Text("₹${item.price}", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, color = Color.Gray, textAlign = androidx.compose.ui.text.style.TextAlign.End)
                                             Row {
-                                                IconButton(onClick = { editingItem = item; showDialog = true }, modifier = Modifier.size(40.dp)) {
+                                                IconButton(onClick = { onNavigateToEdit(selectedCategory!!, item) }, modifier = Modifier.size(40.dp)) {
                                                     Icon(Icons.Rounded.Edit, "Edit", tint = PrimaryTeal.copy(alpha = 0.4f), modifier = Modifier.size(18.dp))
                                                 }
                                                 IconButton(onClick = { viewModel.delete(item) }, modifier = Modifier.size(40.dp)) {
@@ -278,29 +288,6 @@ fun MandiScreen(
                                 }
                             }
                         }
-                    }
-                }
-            }
-
-            if (showDialog) {
-                when (selectedCategory) {
-                    "buyers" -> GenericAddDialog(
-                        "Add Buyer", 
-                        listOf("Buyer Name", "Crop/Item", "Village/Address", "Contact"),
-                        initialValues = if (editingItem != null) listOf(editingItem!!.buyerName, editingItem!!.cropName, editingItem!!.address, editingItem!!.contact) else null,
-                        onDismiss = { showDialog = false; editingItem = null }
-                    ) { vals ->
-                        viewModel.save(editingItem?.copy(buyerName = vals[0], cropName = vals[1], address = vals[2], contact = vals[3]) ?: MandiPrice(buyerName = vals[0], cropName = vals[1], address = vals[2], contact = vals[3]))
-                        showDialog = false; editingItem = null
-                    }
-                    else -> GenericAddDialog(
-                        "Add Price", 
-                        listOf("Crop Name", "Price", "Unit"),
-                        initialValues = if (editingItem != null) listOf(editingItem!!.cropName, editingItem!!.price.toString(), editingItem!!.unit) else null,
-                        onDismiss = { showDialog = false; editingItem = null }
-                    ) { vals ->
-                        viewModel.save(editingItem?.copy(cropName = vals[0], price = vals[1].toDoubleOrNull() ?: 0.0, unit = vals[2]) ?: MandiPrice(cropName = vals[0], price = vals[1].toDoubleOrNull() ?: 0.0, unit = vals[2]))
-                        showDialog = false; editingItem = null
                     }
                 }
             }
@@ -316,8 +303,8 @@ fun MandiHubMainScreen(onBack: () -> Unit, onCategoryClick: (String) -> Unit) {
             @OptIn(ExperimentalMaterial3Api::class)
             TopAppBar(
                 windowInsets = TopAppBarDefaults.windowInsets,
-                title = { Text("Mandi Hub", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } })
+                title = { Text(stringResource(R.string.mandi_hub), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) } })
         }
     ) { padding ->
         androidx.compose.foundation.lazy.LazyColumn(
@@ -331,9 +318,9 @@ fun MandiHubMainScreen(onBack: () -> Unit, onCategoryClick: (String) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item { Spacer(Modifier.height(16.dp)) }
-            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile("Crop Prices", Icons.Rounded.Agriculture) { onCategoryClick("prices") } } }
-            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile("Today's Market", Icons.Rounded.Storefront) { onCategoryClick("market") } } }
-            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile("Local Buyers", Icons.Rounded.Groups) { onCategoryClick("buyers") } } }
+            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.crop_prices), Icons.Rounded.Agriculture) { onCategoryClick("prices") } } }
+            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.todays_market), Icons.Rounded.Storefront) { onCategoryClick("market") } } }
+            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.local_buyers), Icons.Rounded.Groups) { onCategoryClick("buyers") } } }
         }
     }
 }
@@ -344,87 +331,65 @@ fun HealthScreen(
     onBack: () -> Unit,
     villages: List<Village> = emptyList(),
     selectedVillageId: String = "",
-    onVillageChange: (String) -> Unit = {}
+    onVillageChange: (String) -> Unit = {},
+    onNavigateToEdit: (String, HealthHub?) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     var selectedCategory by remember { mutableStateOf<String?>(null) }
-    var editingItem by remember { mutableStateOf<HealthHub?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
 
     if (selectedCategory == null) {
         HealthHubMainScreen(onBack, onCategoryClick = { selectedCategory = it; viewModel.selectCategory(it) })
     } else {
         HubScaffold(
             title = when (selectedCategory) {
-                "doctors" -> "Doctors"
-                "hospitals" -> "Hospitals"
-                "pharmacy" -> "Pharmacy"
-                "ambulance" -> "Ambulance"
-                "police" -> "Police"
-                else -> "Health Hub"
+                "doctors" -> stringResource(R.string.doctors)
+                "hospitals" -> stringResource(R.string.hospitals)
+                "pharmacy" -> stringResource(R.string.pharmacy)
+                "ambulance" -> stringResource(R.string.ambulance)
+                "police" -> stringResource(R.string.police)
+                else -> stringResource(R.string.health_emergency)
             },
-            subtitle = "${state.items.size} Available",
+            subtitle = "${state.items.size} ${stringResource(R.string.available)}",
             onBack = { selectedCategory = null },
-            onAdd = { editingItem = null; showDialog = true },
+            onAdd = { onNavigateToEdit(selectedCategory!!, null) },
             searchQuery = state.searchQuery,
             onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
             villages = villages,
             selectedVillageId = selectedVillageId,
             onVillageChange = onVillageChange
         ) { padding ->
-            HubList(state.items.filter { it.name.contains(state.searchQuery, true) }, state.isLoading, state.error, contentPadding = padding) { item ->
+            HubList(state.items.filter { 
+                it.name.en.contains(state.searchQuery, true) || 
+                it.name.hi.contains(state.searchQuery, true) 
+            }, state.isLoading, state.error, contentPadding = padding) { item ->
                 val details = when (selectedCategory) {
                     "doctors" -> listOf(
-                        Icons.Rounded.Person to "Specialisation: ${item.specialisation}",
-                        Icons.Rounded.AccessTime to "Availability: ${item.availability}"
+                        Icons.Rounded.Person to "Specialisation: ${item.specialisation.text()}",
+                        Icons.Rounded.AccessTime to "Availability: ${item.availability.text()}"
                     )
                     "hospitals" -> listOf(
-                        Icons.Rounded.Bed to "Type: ${item.type}",
-                        Icons.Rounded.MedicalServices to "Facilities: ${item.facilities}",
-                        Icons.Rounded.AccessTime to "Open: ${item.availability}"
+                        Icons.Rounded.Bed to "Type: ${item.type.text()}",
+                        Icons.Rounded.MedicalServices to "Facilities: ${item.facilities.text()}",
+                        Icons.Rounded.AccessTime to "Open: ${item.availability.text()}"
                     )
                     "pharmacy" -> listOf(
-                        Icons.Rounded.MedicalServices to "Services: ${item.services}",
-                        Icons.Rounded.AccessTime to "Open: ${item.availability}"
+                        Icons.Rounded.MedicalServices to "Services: ${item.services.text()}",
+                        Icons.Rounded.AccessTime to "Open: ${item.availability.text()}"
                     )
                     else -> listOf(
-                        Icons.Rounded.Info to item.specialisation,
-                        Icons.Rounded.AccessTime to item.availability
+                        Icons.Rounded.Info to item.specialisation.text(),
+                        Icons.Rounded.AccessTime to item.availability.text()
                     )
                 }
                 
                 DetailCard(
-                    title = item.name,
-                    location = item.address,
+                    title = item.name.text(),
+                    location = item.address.text(),
                     details = details,
                     icon = if (selectedCategory == "hospitals") Icons.Rounded.LocalHospital else Icons.Rounded.Person,
-                    onEdit = { editingItem = item; showDialog = true },
+                    onEdit = { onNavigateToEdit(selectedCategory!!, item) },
                     onDelete = { viewModel.delete(item) }
                 )
-            }
-            if (showDialog) {
-                val labels = when (selectedCategory) {
-                    "doctors" -> listOf("Name", "Address", "Contact", "Specialisation", "Availability")
-                    "hospitals" -> listOf("Name", "Address", "Contact", "Type", "Facilities", "Open Hours")
-                    "pharmacy" -> listOf("Name", "Address", "Contact", "Services", "Open Hours")
-                    else -> listOf("Name", "Address", "Contact")
-                }
-                val initialValues = when (selectedCategory) {
-                    "doctors" -> if (editingItem != null) listOf(editingItem!!.name, editingItem!!.address, editingItem!!.contact, editingItem!!.specialisation, editingItem!!.availability) else null
-                    "hospitals" -> if (editingItem != null) listOf(editingItem!!.name, editingItem!!.address, editingItem!!.contact, editingItem!!.type, editingItem!!.facilities, editingItem!!.availability) else null
-                    "pharmacy" -> if (editingItem != null) listOf(editingItem!!.name, editingItem!!.address, editingItem!!.contact, editingItem!!.services, editingItem!!.availability) else null
-                    else -> if (editingItem != null) listOf(editingItem!!.name, editingItem!!.address, editingItem!!.contact) else null
-                }
-                GenericAddDialog("Add Provider", labels, initialValues = initialValues, onDismiss = { showDialog = false; editingItem = null }) { vals ->
-                    val hub = when (selectedCategory) {
-                        "doctors" -> (editingItem?.copy(name = vals[0], address = vals[1], contact = vals[2], specialisation = vals[3], availability = vals[4]) ?: HealthHub(name = vals[0], address = vals[1], contact = vals[2], specialisation = vals[3], availability = vals[4]))
-                        "hospitals" -> (editingItem?.copy(name = vals[0], address = vals[1], contact = vals[2], type = vals[3], facilities = vals[4], availability = vals[5]) ?: HealthHub(name = vals[0], address = vals[1], contact = vals[2], type = vals[3], facilities = vals[4], availability = vals[5]))
-                        "pharmacy" -> (editingItem?.copy(name = vals[0], address = vals[1], contact = vals[2], services = vals[3], availability = vals[4]) ?: HealthHub(name = vals[0], address = vals[1], contact = vals[2], services = vals[3], availability = vals[4]))
-                        else -> (editingItem?.copy(name = vals[0], address = vals[1], contact = vals[2]) ?: HealthHub(name = vals[0], address = vals[1], contact = vals[2]))
-                    }
-                    viewModel.save(hub)
-                    showDialog = false; editingItem = null
-                }
             }
         }
     }
@@ -438,8 +403,8 @@ fun HealthHubMainScreen(onBack: () -> Unit, onCategoryClick: (String) -> Unit) {
             @OptIn(ExperimentalMaterial3Api::class)
             TopAppBar(
                 windowInsets = TopAppBarDefaults.windowInsets,
-                title = { Text("Health & Emergency", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } })
+                title = { Text(stringResource(R.string.health_emergency), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) } })
         }
     ) { padding ->
         androidx.compose.foundation.lazy.LazyColumn(
@@ -457,13 +422,13 @@ fun HealthHubMainScreen(onBack: () -> Unit, onCategoryClick: (String) -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    EmergencyCard("Ambulance", Icons.Rounded.LocalHospital, Modifier.weight(1f)) { onCategoryClick("ambulance") }
-                    EmergencyCard("Police", Icons.Rounded.NotificationsActive, Modifier.weight(1f)) { onCategoryClick("police") }
+                    EmergencyCard(stringResource(R.string.ambulance), Icons.Rounded.LocalHospital, Modifier.weight(1f)) { onCategoryClick("ambulance") }
+                    EmergencyCard(stringResource(R.string.police), Icons.Rounded.NotificationsActive, Modifier.weight(1f)) { onCategoryClick("police") }
                 }
             }
-            item { CategoryTile("Doctors", Icons.Rounded.MedicalServices) { onCategoryClick("doctors") } }
-            item { CategoryTile("Hospitals", Icons.Rounded.LocalHospital) { onCategoryClick("hospitals") } }
-            item { CategoryTile("Pharmacy", Icons.Rounded.Medication) { onCategoryClick("pharmacy") } }
+            item { CategoryTile(stringResource(R.string.doctors), Icons.Rounded.MedicalServices) { onCategoryClick("doctors") } }
+            item { CategoryTile(stringResource(R.string.hospitals), Icons.Rounded.LocalHospital) { onCategoryClick("hospitals") } }
+            item { CategoryTile(stringResource(R.string.pharmacy), Icons.Rounded.Medication) { onCategoryClick("pharmacy") } }
         }
     }
 }
@@ -491,7 +456,7 @@ fun EmergencyCard(title: String, icon: ImageVector, modifier: Modifier = Modifie
                 modifier = Modifier.height(32.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = CallNowGreen)
             ) {
-                Text("Call Now", style = MaterialTheme.typography.labelSmall)
+                Text(stringResource(R.string.call_now), style = MaterialTheme.typography.labelSmall)
             }
         }
     }
@@ -503,28 +468,29 @@ fun NewsScreen(
     onBack: () -> Unit,
     villages: List<Village> = emptyList(),
     selectedVillageId: String = "",
-    onVillageChange: (String) -> Unit = {}
+    onVillageChange: (String) -> Unit = {},
+    onNavigateToEdit: (News?) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     var selectedNews by remember { mutableStateOf<News?>(null) }
-    var editingItem by remember { mutableStateOf<News?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
 
     if (selectedNews != null) {
         NewsDetailScreen(news = selectedNews!!, onBack = { selectedNews = null })
     } else {
         HubScaffold(
-            title = "Local News",
+            title = stringResource(R.string.local_news),
             subtitle = "${state.items.size} Updates",
             onBack = onBack,
-            onAdd = { editingItem = null; showDialog = true },
+            onAdd = { onNavigateToEdit(null) },
             searchQuery = state.searchQuery,
             onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
             villages = villages,
             selectedVillageId = selectedVillageId,
             onVillageChange = onVillageChange
         ) { padding ->
-            val filteredItems = state.items.filter { it.title.contains(state.searchQuery, true) }
+            val filteredItems = state.items.filter { 
+                it.title.en.contains(state.searchQuery, true) || it.title.hi.contains(state.searchQuery, true) 
+            }
             val breakingNews = filteredItems.filter { it.category == "news" }
             val notices = filteredItems.filter { it.category == "notice" }
 
@@ -539,32 +505,19 @@ fun NewsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (breakingNews.isNotEmpty()) {
-                    item { Text("Breaking News", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) }
+                    item { Text(stringResource(R.string.breaking_news), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) }
                     items(breakingNews) { item ->
-                        NewsCard(item, onClick = { selectedNews = item }, onEdit = { editingItem = item; showDialog = true }, onDelete = { viewModel.delete(item) })
+                        NewsCard(item, onClick = { selectedNews = item }, onEdit = { onNavigateToEdit(item) }, onDelete = { viewModel.delete(item) })
                     }
                 }
 
                 if (notices.isNotEmpty()) {
-                    item { Text("Notices", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) }
+                    item { Text(stringResource(R.string.notices), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) }
                     items(notices) { item ->
-                        NoticeCard(item, onClick = { selectedNews = item }, onEdit = { editingItem = item; showDialog = true }, onDelete = { viewModel.delete(item) })
+                        NoticeCard(item, onClick = { selectedNews = item }, onEdit = { onNavigateToEdit(item) }, onDelete = { viewModel.delete(item) })
                     }
                 }
             }
-        }
-    }
-
-    if (showDialog) {
-        GenericAddDialog(
-            "Add News/Notice", 
-            listOf("Title", "Description", "Image URL (Leave empty for Notice)"), 
-            initialValues = if (editingItem != null) listOf(editingItem!!.title, editingItem!!.description, editingItem!!.image) else null,
-            onDismiss = { showDialog = false; editingItem = null }
-        ) { vals ->
-            val type = if (vals[2].isEmpty()) "notice" else "news"
-            viewModel.save(editingItem?.copy(title = vals[0], description = vals[1], image = vals[2], category = type) ?: News(title = vals[0], description = vals[1], image = vals[2], category = type))
-            showDialog = false; editingItem = null
         }
     }
 }
@@ -587,8 +540,8 @@ fun NewsCard(news: News, onClick: () -> Unit, onEdit: () -> Unit, onDelete: () -
             )
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(news.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), maxLines = 2)
-                Text(news.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
+                Text(news.title.text(), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), maxLines = 2)
+                Text(news.description.text(), style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                     Icon(Icons.Rounded.AccessTime, null, modifier = Modifier.size(14.dp), tint = PrimaryTeal)
                     Spacer(Modifier.width(4.dp))
@@ -618,8 +571,8 @@ fun NoticeCard(news: News, onClick: () -> Unit, onEdit: () -> Unit, onDelete: ()
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(news.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), maxLines = 1)
-                Text(news.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
+                Text(news.title.text(), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), maxLines = 1)
+                Text(news.description.text(), style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                     Icon(Icons.Rounded.CalendarMonth, null, modifier = Modifier.size(14.dp), tint = PrimaryTeal)
                     Spacer(Modifier.width(4.dp))
@@ -640,8 +593,8 @@ fun NewsDetailScreen(news: News, onBack: () -> Unit) {
         topBar = {
             @OptIn(ExperimentalMaterial3Api::class)
             TopAppBar(
-                title = { Text("News Details", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } }
+                title = { Text(stringResource(R.string.news_details), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) } }
             )
         }
     ) { padding ->
@@ -652,7 +605,7 @@ fun NewsDetailScreen(news: News, onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            Text(news.title, style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
+            Text(news.title.text(), style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 12.dp)) {
                 Icon(Icons.Rounded.AccessTime, null, modifier = Modifier.size(16.dp), tint = PrimaryTeal)
                 Spacer(Modifier.width(4.dp))
@@ -667,7 +620,7 @@ fun NewsDetailScreen(news: News, onBack: () -> Unit) {
                 )
                 Spacer(Modifier.height(16.dp))
             }
-            Text(news.description, style = MaterialTheme.typography.bodyLarge, color = Color.DarkGray)
+            Text(news.description.text(), style = MaterialTheme.typography.bodyLarge, color = Color.DarkGray)
         }
     }
 }
@@ -678,28 +631,30 @@ fun NotificationScreen(
     onBack: () -> Unit,
     villages: List<Village> = emptyList(),
     selectedVillageId: String = "",
-    onVillageChange: (String) -> Unit = {}
+    onVillageChange: (String) -> Unit = {},
+    onNavigateToEdit: (AppNotification?) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     var selectedNotification by remember { mutableStateOf<AppNotification?>(null) }
-    var editingItem by remember { mutableStateOf<AppNotification?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
 
     if (selectedNotification != null) {
         NotificationDetailScreen(notification = selectedNotification!!, onBack = { selectedNotification = null })
     } else {
         HubScaffold(
-            title = "Notifications",
+            title = stringResource(R.string.notifications),
             subtitle = "${state.items.size} Total",
             onBack = onBack,
-            onAdd = { editingItem = null; showDialog = true },
+            onAdd = { onNavigateToEdit(null) },
             searchQuery = state.searchQuery,
             onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
             villages = villages,
             selectedVillageId = selectedVillageId,
             onVillageChange = onVillageChange
         ) { padding ->
-            val filteredItems = state.items.filter { it.title.contains(state.searchQuery, true) }
+            val filteredItems = state.items.filter { 
+                it.title.en.contains(state.searchQuery, true) || 
+                it.title.hi.contains(state.searchQuery, true) 
+            }
             
             androidx.compose.foundation.lazy.LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -714,22 +669,10 @@ fun NotificationScreen(
                 if (filteredItems.isNotEmpty()) {
                     item { Text("Today", style = MaterialTheme.typography.labelLarge, color = Color.Gray) }
                     items(filteredItems) { item ->
-                        NotificationCard(item, onClick = { selectedNotification = item }, onEdit = { editingItem = item; showDialog = true }, onDelete = { viewModel.delete(item) })
+                        NotificationCard(item, onClick = { selectedNotification = item }, onEdit = { onNavigateToEdit(item) }, onDelete = { viewModel.delete(item) })
                     }
                 }
             }
-        }
-    }
-
-    if (showDialog) {
-        GenericAddDialog(
-            "Add/Edit Notification",
-            listOf("Title", "Message"),
-            initialValues = if (editingItem != null) listOf(editingItem!!.title, editingItem!!.message) else null,
-            onDismiss = { showDialog = false; editingItem = null }
-        ) { vals ->
-            viewModel.save(editingItem?.copy(title = vals[0], message = vals[1]) ?: AppNotification(title = vals[0], message = vals[1]))
-            showDialog = false; editingItem = null
         }
     }
 }
@@ -753,10 +696,10 @@ fun NotificationCard(notification: AppNotification, onClick: () -> Unit, onEdit:
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(notification.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), maxLines = 1, modifier = Modifier.weight(1f))
+                    Text(notification.title.text(), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), maxLines = 1, modifier = Modifier.weight(1f))
                     Text("2 Hr ago", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 }
-                Text(notification.message, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
+                Text(notification.message.text(), style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
             }
             Row {
                 IconButton(onClick = onEdit) { Icon(Icons.Rounded.Edit, null, tint = PrimaryTeal.copy(0.4f), modifier = Modifier.size(20.dp)) }
@@ -773,8 +716,8 @@ fun NotificationDetailScreen(notification: AppNotification, onBack: () -> Unit) 
         topBar = {
             @OptIn(ExperimentalMaterial3Api::class)
             TopAppBar(
-                title = { Text("Notification Details", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } }
+                title = { Text(stringResource(R.string.notification_details), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) } }
             )
         }
     ) { padding ->
@@ -785,14 +728,14 @@ fun NotificationDetailScreen(notification: AppNotification, onBack: () -> Unit) 
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            Text(notification.title, style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
+            Text(notification.title.text(), style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 12.dp)) {
                 Icon(Icons.Rounded.AccessTime, null, modifier = Modifier.size(16.dp), tint = PrimaryTeal)
                 Spacer(Modifier.width(4.dp))
                 Text("Published: Today, 01:30PM", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
             }
             Spacer(Modifier.height(16.dp))
-            Text(notification.message, style = MaterialTheme.typography.bodyLarge, color = Color.DarkGray)
+            Text(notification.message.text(), style = MaterialTheme.typography.bodyLarge, color = Color.DarkGray)
         }
     }
 }
@@ -803,17 +746,16 @@ fun BannerScreen(
     onBack: () -> Unit,
     villages: List<Village> = emptyList(),
     selectedVillageId: String = "",
-    onVillageChange: (String) -> Unit = {}
+    onVillageChange: (String) -> Unit = {},
+    onNavigateToEdit: (Banner?) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
-    var editingItem by remember { mutableStateOf<Banner?>(null) }
-    var showDialog by remember { mutableStateOf(false) }
     
     HubScaffold(
-        title = "Village Banners", 
+        title = stringResource(R.string.village_banners), 
         subtitle = "${state.items.size} Banners", 
         onBack = onBack, 
-        onAdd = { editingItem = null; showDialog = true }, 
+        onAdd = { onNavigateToEdit(null) }, 
         searchQuery = state.searchQuery, 
         onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
         villages = villages,
@@ -821,7 +763,9 @@ fun BannerScreen(
         onVillageChange = onVillageChange
     ) { padding ->
         val filteredItems = state.items.filter { 
-            it.title.contains(state.searchQuery, true) || it.imageUrl.contains(state.searchQuery, true) 
+            it.title.en.contains(state.searchQuery, true) || 
+            it.title.hi.contains(state.searchQuery, true) || 
+            it.imageUrl.contains(state.searchQuery, true) 
         }
 
         androidx.compose.foundation.lazy.LazyColumn(
@@ -847,7 +791,7 @@ fun BannerScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = item.title,
+                                text = item.title.text(),
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                 maxLines = 2
                             )
@@ -874,7 +818,7 @@ fun BannerScreen(
                         )
                         
                         Row {
-                            IconButton(onClick = { editingItem = item; showDialog = true }) {
+                            IconButton(onClick = { onNavigateToEdit(item) }) {
                                 Icon(Icons.Rounded.Edit, "Edit", tint = PrimaryTeal.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
                             }
                             IconButton(onClick = { viewModel.delete(item) }) {
@@ -885,89 +829,5 @@ fun BannerScreen(
                 }
             }
         }
-
-        if (showDialog) {
-            GenericAddDialog(
-                title = "Add/Edit Banner", 
-                labels = listOf("Title/Offer Text", "Discount Amount (e.g. 10)", "Image URL", "Link"),
-                initialValues = if (editingItem != null) listOf(editingItem!!.title, editingItem!!.discountText, editingItem!!.imageUrl, editingItem!!.link) else null,
-                onDismiss = { showDialog = false; editingItem = null }
-            ) { vals ->
-                viewModel.save(editingItem?.copy(title = vals[0], discountText = vals[1], imageUrl = vals[2], link = vals[3]) ?: Banner(title = vals[0], discountText = vals[1], imageUrl = vals[2], link = vals[3]))
-                showDialog = false; editingItem = null
-            }
-        }
     }
-}
-
-@Composable
-fun HubCard(title: String, subtitle: String, trailing: String, onDelete: () -> Unit) {
-    // Redundant now, but keeping for compatibility if any other call exists. 
-    // Recommended to use DetailCard
-    DetailCard(title, subtitle, listOf(Icons.Rounded.Info to trailing), onDelete, onEdit = {})
-}
-
-@Composable
-fun GenericAddDialog(title: String, labels: List<String>, initialValues: List<String>? = null, onDismiss: () -> Unit, onSave: (List<String>) -> Unit) {
-    val values = remember { mutableStateListOf(*Array(labels.size) { i -> initialValues?.getOrNull(i) ?: "" }) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                labels.forEachIndexed { index, label ->
-                    OutlinedTextField(value = values[index], onValueChange = { values[index] = it }, label = { Text(label) }, modifier = Modifier.fillMaxWidth())
-                }
-            }
-        },
-        confirmButton = { Button(onClick = { onSave(values.toList()) }) { Text("Save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
-}
-
-@Composable
-fun AddConstructionHubDialog(item: ConstructionHub? = null, onDismiss: () -> Unit, onSave: (ConstructionHub) -> Unit) {
-    var shopName by remember { mutableStateOf(item?.shopName ?: "") }
-    var address by remember { mutableStateOf(item?.address ?: "") }
-    var contact by remember { mutableStateOf(item?.contact ?: "") }
-    val products = remember { mutableStateListOf<ConstructionProduct>().apply { item?.products?.let { addAll(it) } } }
-    var pName by remember { mutableStateOf("") }; var pPrice by remember { mutableStateOf("") }; var pUnit by remember { mutableStateOf("") }
-
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(if (item == null) "Add Shop/Supplier" else "Edit Shop/Supplier") }, text = {
-        androidx.compose.foundation.lazy.LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            item {
-                OutlinedTextField(shopName, { shopName = it }, label = { Text("Shop Name") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(address, { address = it }, label = { Text("Location") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(contact, { contact = it }, label = { Text("Contact") }, modifier = Modifier.fillMaxWidth())
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                Text("Add Product", style = MaterialTheme.typography.titleSmall)
-                OutlinedTextField(pName, { pName = it }, label = { Text("Name") })
-                OutlinedTextField(pPrice, { pPrice = it }, label = { Text("Price") })
-                OutlinedTextField(pUnit, { pUnit = it }, label = { Text("Unit") })
-                Button({ if (pName.isNotEmpty()) { products.add(ConstructionProduct(pName, pPrice, pUnit)); pName = ""; pPrice = ""; pUnit = "" } }) { Text("Add Product") }
-            }
-            items(products) { p -> 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("• ${p.name}: ${p.price}/${p.unit}", style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                    IconButton(onClick = { products.remove(p) }) { Icon(Icons.Rounded.Close, null, modifier = Modifier.size(16.dp)) }
-                }
-            }
-        }
-    }, confirmButton = { Button({ onSave(item?.copy(shopName = shopName, address = address, contact = contact, products = products.toList()) ?: ConstructionHub(shopName = shopName, address = address, contact = contact, products = products.toList())) }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
-}
-
-@Composable
-fun AddTransportDialog(item: TransportHub? = null, onDismiss: () -> Unit, onSave: (TransportHub) -> Unit) {
-    var name by remember { mutableStateOf(item?.name ?: "") }
-    var loc by remember { mutableStateOf(item?.location ?: "") }
-    var con by remember { mutableStateOf(item?.contact ?: "") }
-    var type by remember { mutableStateOf(item?.vehicleType ?: "") }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(if (item == null) "Add Provider" else "Edit Provider") }, text = {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(name, { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(loc, { loc = it }, label = { Text("Location") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(con, { con = it }, label = { Text("Contact") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(type, { type = it }, label = { Text("Vehicle Type") }, modifier = Modifier.fillMaxWidth())
-        }
-    }, confirmButton = { Button({ onSave(item?.copy(name = name, location = loc, contact = con, vehicleType = type) ?: TransportHub(name = name, location = loc, contact = con, vehicleType = type)) }) { Text("Save") } }, dismissButton = { TextButton(onDismiss) { Text("Cancel") } })
 }

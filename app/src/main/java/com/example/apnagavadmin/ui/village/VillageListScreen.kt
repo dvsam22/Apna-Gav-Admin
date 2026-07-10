@@ -1,12 +1,10 @@
 package com.example.apnagavadmin.ui.village
 
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.*
@@ -15,21 +13,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.os.LocaleListCompat
 import com.example.apnagavadmin.data.model.Village
 import com.example.apnagavadmin.ui.hubs.PrimaryTeal
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VillageListScreen(
     viewModel: VillageViewModel,
-    onNavigateToDetails: (String) -> Unit
+    onNavigateToDetails: (String) -> Unit,
+    onNavigateToAddVillage: () -> Unit,
+    onNavigateToEditVillage: (Village) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
-    var showAddDialog by remember { mutableStateOf(false) }
+    var showLanguageMenu by remember { mutableStateOf(false) }
+    
+    val config = androidx.compose.ui.platform.LocalConfiguration.current
+    val currentLocale = config.locales[0].language
 
     Scaffold(
         contentWindowInsets = WindowInsets.navigationBars,
@@ -53,6 +58,36 @@ fun VillageListScreen(
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
                             modifier = Modifier.weight(1f)
                         )
+                        
+                        // Language Selector
+                        Box {
+                            IconButton(onClick = { showLanguageMenu = true }) {
+                                Icon(Icons.Rounded.Language, contentDescription = "Change Language", tint = PrimaryTeal)
+                            }
+                            DropdownMenu(
+                                expanded = showLanguageMenu,
+                                onDismissRequest = { showLanguageMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("English", fontWeight = if(currentLocale.startsWith("en")) FontWeight.Bold else FontWeight.Normal) },
+                                    onClick = {
+                                        showLanguageMenu = false
+                                        val appLocale: LocaleListCompat = LocaleListCompat.forLanguageTags("en")
+                                        AppCompatDelegate.setApplicationLocales(appLocale)
+                                    },
+                                    trailingIcon = { if(currentLocale.startsWith("en")) Icon(Icons.Rounded.Check, null, modifier = Modifier.size(18.dp)) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("हिंदी (Hindi)", fontWeight = if(currentLocale.startsWith("hi")) FontWeight.Bold else FontWeight.Normal) },
+                                    onClick = {
+                                        showLanguageMenu = false
+                                        val appLocale: LocaleListCompat = LocaleListCompat.forLanguageTags("hi")
+                                        AppCompatDelegate.setApplicationLocales(appLocale)
+                                    },
+                                    trailingIcon = { if(currentLocale.startsWith("hi")) Icon(Icons.Rounded.Check, null, modifier = Modifier.size(18.dp)) }
+                                )
+                            }
+                        }
                     }
                     TextField(
                         value = state.searchQuery,
@@ -78,7 +113,7 @@ fun VillageListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddDialog = true },
+                onClick = { onNavigateToAddVillage() },
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ) {
@@ -92,7 +127,10 @@ fun VillageListScreen(
             } else if (state.error != null) {
                 Text(state.error ?: "Unknown error", color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center).padding(padding))
             } else {
-                val filteredVillages = state.villages.filter { it.villageName.contains(state.searchQuery, ignoreCase = true) }
+                val filteredVillages = state.villages.filter { 
+                    it.villageName.en.contains(state.searchQuery, ignoreCase = true) || 
+                    it.villageName.hi.contains(state.searchQuery, ignoreCase = true) 
+                }
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
@@ -109,7 +147,9 @@ fun VillageListScreen(
                     items(filteredVillages) { village ->
                         VillageItem(
                             village = village,
+                            currentLocale = currentLocale,
                             onClick = { onNavigateToDetails(village.id) },
+                            onEdit = { onNavigateToEditVillage(village) },
                             onToggleActive = { viewModel.updateVillage(village.copy(isActive = it)) },
                             onDelete = { viewModel.deleteVillage(village.id) }
                         )
@@ -117,20 +157,15 @@ fun VillageListScreen(
                 }
             }
         }
-
-        if (showAddDialog) {
-            AddEditVillageDialog(
-                onDismiss = { showAddDialog = false },
-                onSave = { viewModel.addVillage(it); showAddDialog = false }
-            )
-        }
     }
 }
 
 @Composable
 fun VillageItem(
     village: Village,
+    currentLocale: String,
     onClick: () -> Unit,
+    onEdit: () -> Unit,
     onToggleActive: (Boolean) -> Unit,
     onDelete: () -> Unit
 ) {
@@ -156,85 +191,29 @@ fun VillageItem(
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(village.villageName, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-                if (village.sarpanchName.isNotEmpty()) {
-                    Text("Sarpanch: ${village.sarpanchName}", style = MaterialTheme.typography.bodySmall, color = PrimaryTeal)
+                Text(village.villageName.text(currentLocale), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                if (village.sarpanchName.text(currentLocale).isNotEmpty()) {
+                    Text("Sarpanch: ${village.sarpanchName.text(currentLocale)}", style = MaterialTheme.typography.bodySmall, color = PrimaryTeal)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.LocationOn, contentDescription = null, modifier = Modifier.size(14.dp), tint = PrimaryTeal)
                     Spacer(Modifier.width(4.dp))
-                    Text("${village.district}, ${village.state}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${village.district.text(currentLocale)}, ${village.state.text(currentLocale)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text("PIN: ${village.pincode}", style = MaterialTheme.typography.labelMedium, color = PrimaryTeal)
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Switch(checked = village.isActive, onCheckedChange = onToggleActive, colors = SwitchDefaults.colors(checkedThumbColor = PrimaryTeal))
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
+                Row {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Rounded.Edit, contentDescription = "Edit", tint = PrimaryTeal.copy(alpha = 0.6f))
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(Icons.Rounded.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
+                    }
                 }
             }
             Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
-}
-
-@Composable
-fun AddEditVillageDialog(
-    village: Village? = null,
-    onDismiss: () -> Unit,
-    onSave: (Village) -> Unit
-) {
-    var name by remember { mutableStateOf(village?.villageName ?: "") }
-    var sarpanchName by remember { mutableStateOf(village?.sarpanchName ?: "") }
-    var district by remember { mutableStateOf(village?.district ?: "") }
-    var state by remember { mutableStateOf(village?.state ?: "") }
-    var pincode by remember { mutableStateOf(village?.pincode ?: "") }
-    var lat by remember { mutableStateOf(village?.lat?.toString() ?: "") }
-    var lng by remember { mutableStateOf(village?.lng?.toString() ?: "") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(if (village == null) "Add Village" else "Edit Village") },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Village Name") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = sarpanchName, onValueChange = { sarpanchName = it }, label = { Text("Sarpanch Name") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = district, onValueChange = { district = it }, label = { Text("District") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = state, onValueChange = { state = it }, label = { Text("State") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = pincode, onValueChange = { pincode = it }, label = { Text("Pincode") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = lat, onValueChange = { lat = it }, label = { Text("Latitude") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-                    OutlinedTextField(value = lng, onValueChange = { lng = it }, label = { Text("Longitude") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-                }
-            }
-        },
-        confirmButton = {
-            Button(onClick = {
-                val updatedVillage = village?.copy(
-                    villageName = name,
-                    sarpanchName = sarpanchName,
-                    district = district,
-                    state = state,
-                    pincode = pincode,
-                    lat = lat.toDoubleOrNull() ?: 0.0,
-                    lng = lng.toDoubleOrNull() ?: 0.0
-                ) ?: Village(
-                    villageName = name,
-                    sarpanchName = sarpanchName,
-                    district = district,
-                    state = state,
-                    pincode = pincode,
-                    lat = lat.toDoubleOrNull() ?: 0.0,
-                    lng = lng.toDoubleOrNull() ?: 0.0
-                )
-                onSave(updatedVillage)
-            }) {
-                Text("Save")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
-    )
 }

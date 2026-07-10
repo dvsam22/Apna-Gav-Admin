@@ -59,19 +59,37 @@ class VillageViewModel(
 
     fun addVillage(village: Village) {
         viewModelScope.launch {
-            repository.addVillage(village)
+            _state.value = _state.value.copy(isLoading = true)
+            val result = repository.addVillage(village)
+            if (result is Resource.Error) {
+                _state.value = _state.value.copy(error = result.message, isLoading = false)
+            } else {
+                _state.value = _state.value.copy(isLoading = false, error = null)
+            }
         }
     }
 
     fun updateVillage(village: Village) {
         viewModelScope.launch {
-            repository.updateVillage(village)
+            _state.value = _state.value.copy(isLoading = true)
+            val result = repository.updateVillage(village)
+            if (result is Resource.Error) {
+                _state.value = _state.value.copy(error = result.message, isLoading = false)
+            } else {
+                _state.value = _state.value.copy(isLoading = false, error = null)
+            }
         }
     }
 
     fun deleteVillage(villageId: String) {
         viewModelScope.launch {
-            repository.deleteVillage(villageId)
+            _state.value = _state.value.copy(isLoading = true)
+            val result = repository.deleteVillage(villageId)
+            if (result is Resource.Error) {
+                _state.value = _state.value.copy(error = result.message, isLoading = false)
+            } else {
+                _state.value = _state.value.copy(isLoading = false, error = null)
+            }
         }
     }
 }

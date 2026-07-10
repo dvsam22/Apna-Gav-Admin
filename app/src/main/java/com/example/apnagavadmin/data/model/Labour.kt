@@ -5,19 +5,19 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class LabourCategory(
     val id: String = "",
-    val name: String = "",
+    val name: LocalizedString = LocalizedString(),
     val icon: String = ""
 )
 
 @Serializable
 data class LabourProvider(
     val id: String = "",
-    val name: String = "",
+    val name: LocalizedString = LocalizedString(),
     val contact: String = "",
     val experience: String = "",
-    val location: String = "",
-    val charges: String = "",
-    val skills: String = "", // Changed to String for simplicity in Add/Edit as per mockup
+    val location: LocalizedString = LocalizedString(),
+    val charges: LocalizedString = LocalizedString(),
+    val skills: LocalizedString = LocalizedString(), // Changed to String for simplicity in Add/Edit as per mockup
     val image: String = "",
     val villageId: String = "",
     val categoryId: String = ""

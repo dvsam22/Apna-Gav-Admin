@@ -35,12 +35,12 @@ class LabourViewModel(
             repository.getCategories().collect { res ->
                 if (res is Resource.Success) {
                     val defaultCategories = listOf(
-                        LabourCategory(id = "rajmistri", name = "Rajmistri"),
-                        LabourCategory(id = "plumber", name = "Plumber"),
-                        LabourCategory(id = "electrician", name = "Electrician"),
-                        LabourCategory(id = "carpenter", name = "Carpenter"),
-                        LabourCategory(id = "tailor", name = "Tailor"),
-                        LabourCategory(id = "labour", name = "Labour")
+                        LabourCategory(id = "rajmistri", name = LocalizedString(en = "Rajmistri", hi = "राजमिस्त्री")),
+                        LabourCategory(id = "plumber", name = LocalizedString(en = "Plumber", hi = "प्लंबर")),
+                        LabourCategory(id = "electrician", name = LocalizedString(en = "Electrician", hi = "इलेक्ट्रिशियन")),
+                        LabourCategory(id = "carpenter", name = LocalizedString(en = "Carpenter", hi = "बढ़ई")),
+                        LabourCategory(id = "tailor", name = LocalizedString(en = "Tailor", hi = "दर्जी")),
+                        LabourCategory(id = "labour", name = LocalizedString(en = "Labour", hi = "मजदूर"))
                     )
                     val categories = if (res.data.isNullOrEmpty()) defaultCategories else res.data
                     _state.update { it.copy(categories = categories) }
@@ -481,6 +481,7 @@ class NotificationViewModel(
                 }
             } else {
                 val vId = if (villageId == "all") item.villageId else villageId
+                // Use a separate scope or non-cancellable context for network operations after save
                 repository.saveNotification(vId, item.copy(villageId = vId)) 
             }
         } 

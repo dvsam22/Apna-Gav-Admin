@@ -5,10 +5,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class Village(
     val id: String = "",
-    val villageName: String = "",
-    val sarpanchName: String = "",
-    val district: String = "",
-    val state: String = "",
+    val villageName: LocalizedString = LocalizedString(),
+    val sarpanchName: LocalizedString = LocalizedString(),
+    val district: LocalizedString = LocalizedString(),
+    val state: LocalizedString = LocalizedString(),
     val pincode: String = "",
     val lat: Double = 0.0,
     val lng: Double = 0.0,

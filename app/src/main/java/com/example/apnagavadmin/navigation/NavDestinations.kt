@@ -1,5 +1,6 @@
 package com.example.apnagavadmin.navigation
 
+import com.example.apnagavadmin.data.model.*
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -11,26 +12,53 @@ sealed interface NavRoute {
     data class VillageDetails(val villageId: String) : NavRoute
 
     @Serializable
-    data class LabourHub(val villageId: String) : NavRoute
+    data class LabourScreen(val villageId: String) : NavRoute
 
     @Serializable
-    data class ConstructionHub(val villageId: String) : NavRoute
+    data class ConstructionScreen(val villageId: String) : NavRoute
 
     @Serializable
-    data class TransportHub(val villageId: String) : NavRoute
+    data class TransportScreen(val villageId: String) : NavRoute
 
     @Serializable
-    data class MandiHub(val villageId: String) : NavRoute
+    data class MandiScreen(val villageId: String) : NavRoute
 
     @Serializable
-    data class HealthHub(val villageId: String) : NavRoute
+    data class HealthScreen(val villageId: String) : NavRoute
 
     @Serializable
-    data class NewsHub(val villageId: String) : NavRoute
+    data class NewsScreen(val villageId: String) : NavRoute
 
     @Serializable
-    data class BannerHub(val villageId: String) : NavRoute
+    data class BannerScreen(val villageId: String) : NavRoute
 
     @Serializable
-    data class NotificationHub(val villageId: String) : NavRoute
+    data class NotificationScreen(val villageId: String) : NavRoute
+
+    @Serializable
+    data class UpsertLabour(val villageId: String, val categoryId: String, val provider: LabourProvider? = null) : NavRoute
+
+    @Serializable
+    data class UpsertConstruction(val villageId: String, val categoryId: String, val model: ConstructionHub? = null) : NavRoute
+
+    @Serializable
+    data class UpsertTransport(val villageId: String, val categoryId: String, val model: TransportHub? = null) : NavRoute
+
+    @Serializable
+    data class UpsertMandi(val villageId: String, val categoryId: String, val model: MandiPrice? = null) : NavRoute
+
+    @Serializable
+    data class UpsertHealth(val villageId: String, val categoryId: String, val model: HealthHub? = null) : NavRoute
+
+    @Serializable
+    data class UpsertNews(val villageId: String, val model: News? = null) : NavRoute
+
+    @Serializable
+    data class UpsertBanner(val villageId: String, val model: Banner? = null) : NavRoute
+
+    @Serializable
+    data class UpsertNotification(val villageId: String, val model: AppNotification? = null) : NavRoute
+
+    @Serializable
+    data class UpsertVillage(val model: Village? = null) : NavRoute
 }

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "500998623549",
+    "project_id": "apna-gaon-f57f6",
+    "storage_bucket": "apna-gaon-f57f6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:500998623549:android:8949d5d29dc49886deb554",
+        "android_client_info": {
+          "package_name": "com.dv.apna"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpGE_XWqgn8FPStJdSwbzgEWRDZJEf5NQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:500998623549:android:7c1501a3a66107c2deb554",
+        "android_client_info": {
+          "package_name": "com.example.apnagavadmin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpGE_XWqgn8FPStJdSwbzgEWRDZJEf5NQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
