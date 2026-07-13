@@ -78,4 +78,25 @@
     <string name="pincode">Pincode</string>
     <string name="latitude">Latitude</string>
     <string name="longitude">Longitude</string>
+    <string name="family_functions">Family Functions</string>
+    <string name="tent_decor">Tent, Pandal &amp; Decor</string>
+    <string name="catering_halwai">Catering &amp; Halwai</string>
+    <string name="photo_video">Photo &amp; Videography</string>
+    <string name="dj_sound">DJ, Sound &amp; Band</string>
+    <string name="marriage_halls">Marriage Halls &amp; Lawns</string>
+    <string name="starting_price">Starting Price</string>
+    <string name="village_management">Village Management</string>
+    <string name="admin_dashboard">Admin Dashboard</string>
+    <string name="village_id_label">Village ID: %s</string>
+    <string name="sarpanch_label">Sarpanch: %s</string>
+    <string name="villages_configured">%d Villages Configured</string>
+    <string name="today">Today</string>
+    <string name="total_label">%d Total</string>
+    <string name="updates_label">%d Updates</string>
+    <string name="select_village_to_see_details">Select a village to see details</string>
+    <string name="services_label">Services: %s</string>
+    <string name="starting_price_label">Starting Price: %s</string>
+    <string name="published_label">Published: %s</string>
+    <string name="ago_label">%s ago</string>
+    <string name="banners_label">%d Banners</string>
 </resources>

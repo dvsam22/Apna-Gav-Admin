@@ -78,4 +78,25 @@
     <string name="pincode">पिनकोड</string>
     <string name="latitude">अक्षांश (Latitude)</string>
     <string name="longitude">देशांतर (Longitude)</string>
+    <string name="family_functions">पारिवारिक कार्यक्रम</string>
+    <string name="tent_decor">टेंट हाउस और सजावट</string>
+    <string name="catering_halwai">खाना-पीना और हलवाई</string>
+    <string name="photo_video">कैमरामैन और वीडियो</string>
+    <string name="dj_sound">डीजे और बैंड बाजा</string>
+    <string name="marriage_halls">धर्मशाला और लॉन</string>
+    <string name="starting_price">शुरुआती कीमत</string>
+    <string name="village_management">गांव प्रबंधन</string>
+    <string name="admin_dashboard">एडमिन डैशबोर्ड</string>
+    <string name="village_id_label">गांव आईडी: %s</string>
+    <string name="sarpanch_label">सरपंच: %s</string>
+    <string name="villages_configured">%d गांव कॉन्फ़िगर किए गए</string>
+    <string name="today">आज</string>
+    <string name="total_label">%d कुल</string>
+    <string name="updates_label">%d अपडेट</string>
+    <string name="select_village_to_see_details">विवरण देखने के लिए एक गांव चुनें</string>
+    <string name="services_label">सेवाएं: %s</string>
+    <string name="starting_price_label">शुरुआती कीमत: %s</string>
+    <string name="published_label">प्रकाशित: %s</string>
+    <string name="ago_label">%s पहले</string>
+    <string name="banners_label">%d बैनर</string>
 </resources>

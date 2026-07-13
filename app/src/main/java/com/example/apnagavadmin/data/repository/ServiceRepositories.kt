@@ -1,6 +1,7 @@
 package com.example.apnagavadmin.data.repository
 
 import com.example.apnagavadmin.data.model.*
+import com.example.apnagavadmin.util.AppError
 import com.example.apnagavadmin.util.Resource
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
@@ -12,7 +13,7 @@ class LabourRepository(private val firestore: FirebaseFirestore = FirebaseFirest
     fun getCategories(): Flow<Resource<List<LabourCategory>>> = callbackFlow {
         trySend(Resource.Loading())
         val subscription = firestore.collection("labour_categories").addSnapshotListener { snapshot, error ->
-            if (error != null) { trySend(Resource.Error(error.message ?: "Error")); return@addSnapshotListener }
+            if (error != null) { trySend(Resource.Error(AppError.FirestoreError(error.message ?: "Error"))); return@addSnapshotListener }
             val categories = snapshot?.documents?.mapNotNull { it.toObject(LabourCategory::class.java)?.copy(id = it.id) } ?: emptyList()
             trySend(Resource.Success(categories))
         }
@@ -29,7 +30,7 @@ class LabourRepository(private val firestore: FirebaseFirestore = FirebaseFirest
         val subscription = query.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 android.util.Log.e("FirestoreError", "Index required: ${error.message}")
-                trySend(Resource.Error(error.message ?: "Error"))
+                trySend(Resource.Error(AppError.FirestoreError(error.message ?: "Error")))
                 return@addSnapshotListener
             }
             val providers = snapshot?.documents?.mapNotNull { doc ->
@@ -60,12 +61,12 @@ class LabourRepository(private val firestore: FirebaseFirestore = FirebaseFirest
             firestore.collection("villages").document(vId).collection("labour").document(provider.id).set(provider.copy(villageId = vId)).await()
         }
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 
     suspend fun deleteProvider(actualVillageId: String, providerId: String): Resource<Unit> = try {
         firestore.collection("villages").document(actualVillageId).collection("labour").document(providerId).delete().await()
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 }
 
 class ConstructionRepository(private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()) {
@@ -81,7 +82,7 @@ class ConstructionRepository(private val firestore: FirebaseFirestore = Firebase
         val subscription = baseQuery.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 android.util.Log.e("FirestoreError", "Index required: ${error.message}")
-                trySend(Resource.Error(error.message ?: "Error"))
+                trySend(Resource.Error(AppError.FirestoreError(error.message ?: "Error")))
                 return@addSnapshotListener
             }
             val hubs = snapshot?.documents?.mapNotNull { doc ->
@@ -112,12 +113,12 @@ class ConstructionRepository(private val firestore: FirebaseFirestore = Firebase
             firestore.collection("villages").document(vId).collection("construction").document(hub.id).set(hub.copy(villageId = vId)).await()
         }
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 
     suspend fun deleteHub(actualVillageId: String, hubId: String): Resource<Unit> = try {
         firestore.collection("villages").document(actualVillageId).collection("construction").document(hubId).delete().await()
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 }
 
 class TransportRepository(private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()) {
@@ -133,7 +134,7 @@ class TransportRepository(private val firestore: FirebaseFirestore = FirebaseFir
         val subscription = baseQuery.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 android.util.Log.e("FirestoreError", "Index required: ${error.message}")
-                trySend(Resource.Error(error.message ?: "Error"))
+                trySend(Resource.Error(AppError.FirestoreError(error.message ?: "Error")))
                 return@addSnapshotListener
             }
             val hubs = snapshot?.documents?.mapNotNull { doc ->
@@ -164,12 +165,12 @@ class TransportRepository(private val firestore: FirebaseFirestore = FirebaseFir
             firestore.collection("villages").document(vId).collection("transport").document(hub.id).set(hub.copy(villageId = vId)).await()
         }
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 
     suspend fun deleteHub(actualVillageId: String, hubId: String): Resource<Unit> = try {
         firestore.collection("villages").document(actualVillageId).collection("transport").document(hubId).delete().await()
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 }
 
 class MandiRepository(private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()) {
@@ -185,7 +186,7 @@ class MandiRepository(private val firestore: FirebaseFirestore = FirebaseFiresto
         val subscription = baseQuery.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 android.util.Log.e("FirestoreError", "Index required: ${error.message}")
-                trySend(Resource.Error(error.message ?: "Error"))
+                trySend(Resource.Error(AppError.FirestoreError(error.message ?: "Error")))
                 return@addSnapshotListener
             }
             val prices = snapshot?.documents?.mapNotNull { it.toObject(MandiPrice::class.java)?.copy(id = it.id) } ?: emptyList()
@@ -210,12 +211,12 @@ class MandiRepository(private val firestore: FirebaseFirestore = FirebaseFiresto
             firestore.collection("villages").document(vId).collection("mandi").document(price.id).set(price.copy(villageId = vId)).await()
         }
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 
     suspend fun deletePrice(actualVillageId: String, priceId: String): Resource<Unit> = try {
         firestore.collection("villages").document(actualVillageId).collection("mandi").document(priceId).delete().await()
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 }
 
 class HealthRepository(private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()) {
@@ -231,7 +232,7 @@ class HealthRepository(private val firestore: FirebaseFirestore = FirebaseFirest
         val subscription = baseQuery.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 android.util.Log.e("FirestoreError", "Index required: ${error.message}")
-                trySend(Resource.Error(error.message ?: "Error"))
+                trySend(Resource.Error(AppError.FirestoreError(error.message ?: "Error")))
                 return@addSnapshotListener
             }
             val hubs = snapshot?.documents?.mapNotNull { it.toObject(HealthHub::class.java)?.copy(id = it.id) } ?: emptyList()
@@ -256,10 +257,62 @@ class HealthRepository(private val firestore: FirebaseFirestore = FirebaseFirest
             firestore.collection("villages").document(vId).collection("health").document(hub.id).set(hub.copy(villageId = vId)).await()
         }
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 
     suspend fun deleteHub(actualVillageId: String, hubId: String): Resource<Unit> = try {
         firestore.collection("villages").document(actualVillageId).collection("health").document(hubId).delete().await()
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
+}
+
+class FamilyFunctionRepository(private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()) {
+    fun getHubs(villageId: String, categoryId: String? = null): Flow<Resource<List<FamilyFunctionHub>>> = callbackFlow {
+        trySend(Resource.Loading())
+        val baseQuery = if (villageId == "all") {
+            firestore.collectionGroup("family_functions")
+        } else {
+            val q = firestore.collection("villages").document(villageId).collection("family_functions")
+            if (categoryId != null) q.whereEqualTo("categoryId", categoryId) else q
+        }
+
+        val subscription = baseQuery.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                android.util.Log.e("FirestoreError", "Index required: ${error.message}")
+                trySend(Resource.Error(AppError.FirestoreError(error.message ?: "Error")))
+                return@addSnapshotListener
+            }
+            val hubs = snapshot?.documents?.mapNotNull { doc ->
+                try {
+                    doc.toObject(FamilyFunctionHub::class.java)?.copy(id = doc.id)
+                } catch (e: Exception) {
+                    null
+                }
+            } ?: emptyList()
+            
+            val filtered = if (villageId == "all" && categoryId != null) {
+                hubs.filter { it.categoryId == categoryId }
+            } else {
+                hubs
+            }
+            trySend(Resource.Success(filtered))
+        }
+        awaitClose { subscription.remove() }
+    }
+
+    suspend fun saveHub(actualVillageId: String, hub: FamilyFunctionHub): Resource<Unit> = try {
+        val vId = if (actualVillageId == "all") hub.villageId else actualVillageId
+        if (vId.isEmpty() || vId == "all") throw Exception("Invalid Village ID")
+
+        if (hub.id.isEmpty()) {
+            firestore.collection("villages").document(vId).collection("family_functions").add(hub.copy(villageId = vId)).await()
+        } else {
+            firestore.collection("villages").document(vId).collection("family_functions").document(hub.id).set(hub.copy(villageId = vId)).await()
+        }
+        Resource.Success(Unit)
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
+
+    suspend fun deleteHub(actualVillageId: String, hubId: String): Resource<Unit> = try {
+        firestore.collection("villages").document(actualVillageId).collection("family_functions").document(hubId).delete().await()
+        Resource.Success(Unit)
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 }

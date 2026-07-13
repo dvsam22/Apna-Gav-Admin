@@ -19,6 +19,6 @@ data class LabourProvider(
     val charges: LocalizedString = LocalizedString(),
     val skills: LocalizedString = LocalizedString(), // Changed to String for simplicity in Add/Edit as per mockup
     val image: String = "",
-    val villageId: String = "",
+    override val villageId: String = "",
     val categoryId: String = ""
-)
+) : HubItem

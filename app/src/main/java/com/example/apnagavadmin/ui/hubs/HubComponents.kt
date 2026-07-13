@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.example.apnagavadmin.R
 import com.example.apnagavadmin.data.model.LocalizedString
+import com.example.apnagavadmin.data.model.text
+import com.example.apnagavadmin.util.AppError
 
 // Target Green for "Call Now"
 val CallNowGreen = Color(0xFF42C18E)
@@ -30,24 +32,80 @@ fun LocalizedTextField(
     onValueChange: (LocalizedString) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
-    singleLine: Boolean = true
+    singleLine: Boolean = true,
+    icon: ImageVector? = null
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = PrimaryTeal)
-        OutlinedTextField(
-            value = value.en,
-            onValueChange = { onValueChange(value.copy(en = it)) },
-            label = { Text(stringResource(R.string.english)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = singleLine
-        )
-        OutlinedTextField(
-            value = value.hi,
-            onValueChange = { onValueChange(value.copy(hi = it)) },
-            label = { Text(stringResource(R.string.hindi)) },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = singleLine
-        )
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.1f))
+    ) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (icon != null) {
+                    Icon(icon, null, modifier = Modifier.size(18.dp), tint = PrimaryTeal)
+                    Spacer(Modifier.width(8.dp))
+                }
+                Text(
+                    text = label.uppercase(),
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                    color = PrimaryTeal
+                )
+            }
+            
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // English Field
+                OutlinedTextField(
+                    value = value.en,
+                    onValueChange = { onValueChange(value.copy(en = it)) },
+                    placeholder = { Text(stringResource(R.string.english), style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = singleLine,
+                    shape = MaterialTheme.shapes.medium,
+                    leadingIcon = { 
+                        Surface(
+                            modifier = Modifier.padding(start = 12.dp, end = 4.dp),
+                            color = PrimaryTeal.copy(alpha = 0.1f),
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            Text("EN", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = PrimaryTeal)
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryTeal,
+                        unfocusedBorderColor = Color.LightGray,
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White
+                    )
+                )
+
+                // Hindi Field
+                OutlinedTextField(
+                    value = value.hi,
+                    onValueChange = { onValueChange(value.copy(hi = it)) },
+                    placeholder = { Text(stringResource(R.string.hindi), style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = singleLine,
+                    shape = MaterialTheme.shapes.medium,
+                    leadingIcon = {
+                        Surface(
+                            modifier = Modifier.padding(start = 12.dp, end = 4.dp),
+                            color = Color(0xFFFFA000).copy(alpha = 0.1f), // Orange for Hindi
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            Text("HI", modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = Color(0xFFFFA000))
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryTeal,
+                        unfocusedBorderColor = Color.LightGray,
+                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color.White
+                    )
+                )
+            }
+        }
     }
 }
 
@@ -152,7 +210,13 @@ fun VillageSelector(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selectedVillage = villages.find { it.id == selectedVillageId }
-    val displayName = selectedVillage?.villageName?.text() ?: if (selectedVillageId == "all") stringResource(R.string.all_villages) else stringResource(R.string.select_village)
+    val displayName = if (selectedVillage != null) {
+        selectedVillage.villageName.text()
+    } else if (selectedVillageId == "all") {
+        stringResource(R.string.all_villages)
+    } else {
+        stringResource(R.string.select_village)
+    }
 
     Box(modifier = Modifier.padding(end = 8.dp)) {
         AssistChip(
@@ -198,7 +262,7 @@ fun VillageSelector(
 fun <T> HubList(
     items: List<T>,
     isLoading: Boolean,
-    error: String?,
+    error: AppError?,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     itemContent: @Composable (T) -> Unit
 ) {
@@ -212,7 +276,7 @@ fun <T> HubList(
         if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center).padding(contentPadding))
         } else if (error != null) {
-            Text(error, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center).padding(contentPadding))
+            Text(error.message, color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center).padding(contentPadding))
         } else {
             androidx.compose.foundation.lazy.LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -314,11 +378,12 @@ fun DetailCard(
             
             Spacer(Modifier.height(12.dp))
             
-            Button(
+            OutlinedButton(
                 onClick = onCallClick,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.buttonColors(containerColor = CallNowGreen)
+                border = androidx.compose.foundation.BorderStroke(1.dp, CallNowGreen),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = CallNowGreen)
             ) {
                 Icon(Icons.Rounded.Call, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))

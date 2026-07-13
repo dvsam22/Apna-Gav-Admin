@@ -1,7 +1,12 @@
 package com.example.apnagavadmin.util
 
-sealed class Resource<T>(val data: T? = null, val message: String? = null) {
+sealed class Resource<T>(val data: T? = null, val error: AppError? = null) {
     class Success<T>(data: T) : Resource<T>(data)
-    class Error<T>(message: String, data: T? = null) : Resource<T>(data, message)
+    class Error<T>(error: AppError, data: T? = null) : Resource<T>(data, error)
     class Loading<T>(data: T? = null) : Resource<T>(data)
+
+    /**
+     * Backward compatibility or easy access to message
+     */
+    val message: String? get() = error?.message
 }

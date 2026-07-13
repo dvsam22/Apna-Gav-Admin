@@ -23,6 +23,7 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.res.stringResource
 import com.example.apnagavadmin.R
 import com.example.apnagavadmin.data.model.*
+import com.example.apnagavadmin.data.model.text
 
 @Composable
 fun ConstructionScreen(
@@ -261,7 +262,7 @@ fun MandiScreen(
                                     CircularProgressIndicator(color = PrimaryTeal)
                                 }
                             } else if (state.error != null) {
-                                Text(state.error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
+                                Text(state.error?.message ?: "", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(16.dp))
                             } else {
                                 androidx.compose.foundation.lazy.LazyColumn(
                                     verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -463,6 +464,89 @@ fun EmergencyCard(title: String, icon: ImageVector, modifier: Modifier = Modifie
 }
 
 @Composable
+fun FamilyFunctionScreen(
+    viewModel: FamilyFunctionViewModel,
+    onBack: () -> Unit,
+    villages: List<Village> = emptyList(),
+    selectedVillageId: String = "",
+    onVillageChange: (String) -> Unit = {},
+    onNavigateToEdit: (String, FamilyFunctionHub?) -> Unit
+) {
+    val state by viewModel.state.collectAsState()
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+
+    if (selectedCategory == null) {
+        FamilyFunctionMainScreen(onBack, onCategoryClick = { selectedCategory = it; viewModel.selectCategory(it) })
+    } else {
+        HubScaffold(
+            title = when (selectedCategory) {
+                "tent" -> stringResource(R.string.tent_decor)
+                "catering" -> stringResource(R.string.catering_halwai)
+                "photo" -> stringResource(R.string.photo_video)
+                "dj" -> stringResource(R.string.dj_sound)
+                "marriage_halls" -> stringResource(R.string.marriage_halls)
+                else -> stringResource(R.string.family_functions)
+            },
+            subtitle = "${state.items.size} ${stringResource(R.string.available)}",
+            onBack = { selectedCategory = null },
+            onAdd = { onNavigateToEdit(selectedCategory!!, null) },
+            searchQuery = state.searchQuery,
+            onSearchQueryChange = { viewModel.onSearchQueryChange(it) },
+            villages = villages,
+            selectedVillageId = selectedVillageId,
+            onVillageChange = onVillageChange
+        ) { padding ->
+            HubList(state.items.filter { 
+                it.name.en.contains(state.searchQuery, true) || 
+                it.name.hi.contains(state.searchQuery, true) 
+            }, state.isLoading, state.error, contentPadding = padding) { item ->
+                DetailCard(
+                    title = item.name.text(),
+                    location = item.address.text(),
+                    details = listOf(
+                        Icons.Rounded.Star to stringResource(R.string.services_label, item.services.text()),
+                        Icons.Rounded.Payments to stringResource(R.string.starting_price_label, item.startingPrice.text())
+                    ),
+                    onEdit = { onNavigateToEdit(selectedCategory!!, item) },
+                    onDelete = { viewModel.delete(item) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun FamilyFunctionMainScreen(onBack: () -> Unit, onCategoryClick: (String) -> Unit) {
+    Scaffold(
+        contentWindowInsets = WindowInsets.navigationBars,
+        topBar = {
+            @OptIn(ExperimentalMaterial3Api::class)
+            TopAppBar(
+                windowInsets = TopAppBarDefaults.windowInsets,
+                title = { Text(stringResource(R.string.family_functions), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back)) } })
+        }
+    ) { padding ->
+        androidx.compose.foundation.lazy.LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                top = padding.calculateTopPadding() + 16.dp,
+                end = 16.dp,
+                bottom = padding.calculateBottomPadding() + 16.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item { CategoryTile(stringResource(R.string.tent_decor), Icons.Rounded.Store) { onCategoryClick("tent") } }
+            item { CategoryTile(stringResource(R.string.catering_halwai), Icons.Rounded.Restaurant) { onCategoryClick("catering") } }
+            item { CategoryTile(stringResource(R.string.photo_video), Icons.Rounded.PhotoCamera) { onCategoryClick("photo") } }
+            item { CategoryTile(stringResource(R.string.dj_sound), Icons.Rounded.Audiotrack) { onCategoryClick("dj") } }
+            item { CategoryTile(stringResource(R.string.marriage_halls), Icons.Rounded.LocationCity) { onCategoryClick("marriage_halls") } }
+        }
+    }
+}
+
+@Composable
 fun NewsScreen(
     viewModel: NewsViewModel,
     onBack: () -> Unit,
@@ -479,7 +563,7 @@ fun NewsScreen(
     } else {
         HubScaffold(
             title = stringResource(R.string.local_news),
-            subtitle = "${state.items.size} Updates",
+            subtitle = stringResource(R.string.updates_label, state.items.size),
             onBack = onBack,
             onAdd = { onNavigateToEdit(null) },
             searchQuery = state.searchQuery,
@@ -545,7 +629,7 @@ fun NewsCard(news: News, onClick: () -> Unit, onEdit: () -> Unit, onDelete: () -
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                     Icon(Icons.Rounded.AccessTime, null, modifier = Modifier.size(14.dp), tint = PrimaryTeal)
                     Spacer(Modifier.width(4.dp))
-                    Text("2 Hours", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Text(stringResource(R.string.ago_label, "2 Hr"), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 }
             }
             Row {
@@ -609,7 +693,7 @@ fun NewsDetailScreen(news: News, onBack: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 12.dp)) {
                 Icon(Icons.Rounded.AccessTime, null, modifier = Modifier.size(16.dp), tint = PrimaryTeal)
                 Spacer(Modifier.width(4.dp))
-                Text("Published: 2 hours ago", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                Text(stringResource(R.string.published_label, stringResource(R.string.ago_label, "2 hours")), style = MaterialTheme.typography.labelMedium, color = Color.Gray)
             }
             if (news.image.isNotEmpty()) {
                 AsyncImage(
@@ -642,7 +726,7 @@ fun NotificationScreen(
     } else {
         HubScaffold(
             title = stringResource(R.string.notifications),
-            subtitle = "${state.items.size} Total",
+            subtitle = stringResource(R.string.total_label, state.items.size),
             onBack = onBack,
             onAdd = { onNavigateToEdit(null) },
             searchQuery = state.searchQuery,
@@ -667,7 +751,7 @@ fun NotificationScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (filteredItems.isNotEmpty()) {
-                    item { Text("Today", style = MaterialTheme.typography.labelLarge, color = Color.Gray) }
+                    item { Text(stringResource(R.string.today), style = MaterialTheme.typography.labelLarge, color = Color.Gray) }
                     items(filteredItems) { item ->
                         NotificationCard(item, onClick = { selectedNotification = item }, onEdit = { onNavigateToEdit(item) }, onDelete = { viewModel.delete(item) })
                     }
@@ -697,7 +781,7 @@ fun NotificationCard(notification: AppNotification, onClick: () -> Unit, onEdit:
             Column(Modifier.weight(1f)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(notification.title.text(), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), maxLines = 1, modifier = Modifier.weight(1f))
-                    Text("2 Hr ago", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Text(stringResource(R.string.ago_label, "2 Hr"), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 }
                 Text(notification.message.text(), style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
             }
@@ -732,7 +816,7 @@ fun NotificationDetailScreen(notification: AppNotification, onBack: () -> Unit) 
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 12.dp)) {
                 Icon(Icons.Rounded.AccessTime, null, modifier = Modifier.size(16.dp), tint = PrimaryTeal)
                 Spacer(Modifier.width(4.dp))
-                Text("Published: Today, 01:30PM", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                Text(stringResource(R.string.published_label, stringResource(R.string.today)), style = MaterialTheme.typography.labelMedium, color = Color.Gray)
             }
             Spacer(Modifier.height(16.dp))
             Text(notification.message.text(), style = MaterialTheme.typography.bodyLarge, color = Color.DarkGray)
@@ -753,7 +837,7 @@ fun BannerScreen(
     
     HubScaffold(
         title = stringResource(R.string.village_banners), 
-        subtitle = "${state.items.size} Banners", 
+        subtitle = stringResource(R.string.banners_label, state.items.size),
         onBack = onBack, 
         onAdd = { onNavigateToEdit(null) }, 
         searchQuery = state.searchQuery, 
@@ -831,3 +915,4 @@ fun BannerScreen(
         }
     }
 }
+// Cleaned version

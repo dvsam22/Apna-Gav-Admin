@@ -1,6 +1,7 @@
 package com.example.apnagavadmin.data.repository
 
 import com.example.apnagavadmin.data.model.Village
+import com.example.apnagavadmin.util.AppError
 import com.example.apnagavadmin.util.Resource
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
@@ -17,7 +18,7 @@ class VillageRepository(
         trySend(Resource.Loading())
         val subscription = villageCollection.addSnapshotListener { snapshot, error ->
             if (error != null) {
-                trySend(Resource.Error(error.message ?: "Unknown error"))
+                trySend(Resource.Error(AppError.FirestoreError(error.message ?: "Unknown error")))
                 return@addSnapshotListener
             }
             if (snapshot != null) {
@@ -39,7 +40,7 @@ class VillageRepository(
             villageCollection.add(village).await()
             Resource.Success(Unit)
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to add village")
+            Resource.Error(AppError.FirestoreError(e.message ?: "Failed to add village"))
         }
     }
 
@@ -48,7 +49,7 @@ class VillageRepository(
             villageCollection.document(village.id).set(village).await()
             Resource.Success(Unit)
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to update village")
+            Resource.Error(AppError.FirestoreError(e.message ?: "Failed to update village"))
         }
     }
 
@@ -57,7 +58,7 @@ class VillageRepository(
             villageCollection.document(villageId).delete().await()
             Resource.Success(Unit)
         } catch (e: Exception) {
-            Resource.Error(e.message ?: "Failed to delete village")
+            Resource.Error(AppError.FirestoreError(e.message ?: "Failed to delete village"))
         }
     }
 }

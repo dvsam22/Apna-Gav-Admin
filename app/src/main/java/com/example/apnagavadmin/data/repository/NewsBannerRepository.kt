@@ -1,6 +1,7 @@
 package com.example.apnagavadmin.data.repository
 
 import com.example.apnagavadmin.data.model.*
+import com.example.apnagavadmin.util.AppError
 import com.example.apnagavadmin.util.Resource
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.firestore.DocumentSnapshot
@@ -186,7 +187,7 @@ class NewsBannerRepository(
             .addSnapshotListener { snapshot, error ->
                 if (error != null) { 
                     android.util.Log.e("FirestoreError", "Index required: ${error.message}")
-                    trySend(Resource.Error(error.message ?: "Error")); return@addSnapshotListener 
+                    trySend(Resource.Error(AppError.FirestoreError(error.message ?: "Error"))); return@addSnapshotListener 
                 }
                 val news = snapshot?.documents?.mapNotNull { it.toNews() } 
                     ?.sortedByDescending { it.date } ?: emptyList()
@@ -207,12 +208,12 @@ class NewsBannerRepository(
             firestore.collection("villages").document(vId).collection("news").document(news.id).set(news.copy(villageId = vId)).await()
         }
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 
     suspend fun deleteNews(actualVillageId: String, newsId: String): Resource<Unit> = try {
         firestore.collection("villages").document(actualVillageId).collection("news").document(newsId).delete().await()
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 
     fun getBanners(villageId: String): Flow<Resource<List<Banner>>> = callbackFlow {
         trySend(Resource.Loading())
@@ -224,7 +225,7 @@ class NewsBannerRepository(
         val subscription = query.addSnapshotListener { snapshot, error ->
             if (error != null) { 
                 android.util.Log.e("FirestoreError", "Index required: ${error.message}")
-                trySend(Resource.Error(error.message ?: "Error")); return@addSnapshotListener 
+                trySend(Resource.Error(AppError.FirestoreError(error.message ?: "Error"))); return@addSnapshotListener 
             }
             val banners = snapshot?.documents?.mapNotNull { it.toBanner() } ?: emptyList()
             trySend(Resource.Success(banners))
@@ -242,12 +243,12 @@ class NewsBannerRepository(
             firestore.collection("villages").document(vId).collection("banners").document(banner.id).set(banner.copy(villageId = vId)).await()
         }
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 
     suspend fun deleteBanner(villageId: String, bannerId: String): Resource<Unit> = try {
         firestore.collection("villages").document(villageId).collection("banners").document(bannerId).delete().await()
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 
     fun getNotifications(villageId: String): Flow<Resource<List<com.example.apnagavadmin.data.model.AppNotification>>> = callbackFlow {
         trySend(Resource.Loading())
@@ -260,7 +261,7 @@ class NewsBannerRepository(
             .addSnapshotListener { snapshot, error ->
                 if (error != null) { 
                     android.util.Log.e("FirestoreError", "Index required: ${error.message}")
-                    trySend(Resource.Error(error.message ?: "Error")); return@addSnapshotListener 
+                    trySend(Resource.Error(AppError.FirestoreError(error.message ?: "Error"))); return@addSnapshotListener 
                 }
                 val notifications = snapshot?.documents?.mapNotNull { it.toAppNotification() }
                     ?.sortedByDescending { it.date } ?: emptyList()
@@ -281,10 +282,10 @@ class NewsBannerRepository(
             firestore.collection("villages").document(vId).collection("notifications").document(notification.id).set(notification.copy(villageId = vId)).await()
         }
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 
     suspend fun deleteNotification(villageId: String, notificationId: String): Resource<Unit> = try {
         firestore.collection("villages").document(villageId).collection("notifications").document(notificationId).delete().await()
         Resource.Success(Unit)
-    } catch (e: Exception) { Resource.Error(e.message ?: "Failed") }
+    } catch (e: Exception) { Resource.Error(AppError.FirestoreError(e.message ?: "Failed")) }
 }

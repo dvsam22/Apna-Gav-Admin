@@ -14,6 +14,7 @@ class DummyDataGenerator {
     private val mandiRepo = MandiRepository()
     private val healthRepo = HealthRepository()
     private val newsRepo = NewsBannerRepository()
+    private val familyRepo = FamilyFunctionRepository()
 
     fun generateAllData() {
         CoroutineScope(Dispatchers.IO).launch {
@@ -62,6 +63,14 @@ class DummyDataGenerator {
 
                 // 7. Banners
                 newsRepo.saveBanner(vId, Banner("b1_$vId", "https://picsum.photos/seed/veg/400/200", LocalizedString("Fresh Vegetables", "ताजी सब्जियां"), "20", "https://example.com", vId))
+
+                // 8. Family Functions
+                familyRepo.saveHub(vId, FamilyFunctionHub("f1_$vId", LocalizedString("Baba Amarnath Tent House", "बाबा अमरनाथ टेंट हाउस"), LocalizedString("Kalyanpur (Near Block Office)", "कल्याणपुर (ब्लॉक ऑफिस के पास)"), "9567890101", LocalizedString("Waterproof Pandal, Light & Seating", "वाटरप्रूफ पंडाल, लाइट और बैठने की व्यवस्था"), LocalizedString("₹15,000", "₹15,000"), "", vId, "tent"))
+                familyRepo.saveHub(vId, FamilyFunctionHub("f2_$vId", LocalizedString("Shree Ram Flowers & Decorators", "श्री राम फ्लावर्स एंड डेकोरेटर्स"), LocalizedString("Rampur Village (Near Shiv Mandir)", "रामपुर गांव (शिव मंदिर के पास)"), "9567890102", LocalizedString("Stage & Gate Floral Decoration", "स्टेज और गेट फूलों की सजावट"), LocalizedString("₹5,000", "₹5,000"), "", vId, "tent"))
+                familyRepo.saveHub(vId, FamilyFunctionHub("f3_$vId", LocalizedString("Gupta Ji Halwai", "गुप्ता जी हलवाई"), LocalizedString("Main Market", "मुख्य बाजार"), "9567890103", LocalizedString("Pure Veg Catering, Special Sweets", "शुद्ध शाकाहारी खान-पान, विशेष मिठाइयाँ"), LocalizedString("₹250/Plate", "₹250/प्लेट"), "", vId, "catering"))
+                familyRepo.saveHub(vId, FamilyFunctionHub("f4_$vId", LocalizedString("Digital Photo Studio", "डिजिटल फोटो स्टूडियो"), LocalizedString("Bus Stand Road", "बस स्टैंड रोड"), "9567890104", LocalizedString("HD Photography & Cinematic Video", "HD फोटोग्राफी और सिनेमैटिक वीडियो"), LocalizedString("₹10,000", "₹10,000"), "", vId, "photo"))
+                familyRepo.saveHub(vId, FamilyFunctionHub("f5_$vId", LocalizedString("Rocking Star DJ", "रॉकिंग स्टार डीजे"), LocalizedString("Station Road", "स्टेशन रोड"), "9567890105", LocalizedString("High Bass Sound, LED Lights", "हाई बेस साउंड, एलईडी लाइट्स"), LocalizedString("₹8,000", "₹8,000"), "", vId, "dj"))
+                familyRepo.saveHub(vId, FamilyFunctionHub("f6_$vId", LocalizedString("Panchayat Bhawan Lawn", "पंचायत भवन लॉन"), LocalizedString("Civil Lines", "सिविल लाइन्स"), "9567890106", LocalizedString("Large Open Area, Parking Available", "बड़ा खुला क्षेत्र, पार्किंग उपलब्ध"), LocalizedString("₹20,000", "₹20,000"), "", vId, "marriage_halls"))
             }
         }
     }

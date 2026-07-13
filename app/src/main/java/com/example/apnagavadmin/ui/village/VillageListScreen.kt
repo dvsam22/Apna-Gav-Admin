@@ -18,7 +18,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.os.LocaleListCompat
+import androidx.compose.ui.res.stringResource
+import com.example.apnagavadmin.R
 import com.example.apnagavadmin.data.model.Village
+import com.example.apnagavadmin.data.model.text
 import com.example.apnagavadmin.ui.hubs.PrimaryTeal
 import java.util.Locale
 
@@ -54,7 +57,7 @@ fun VillageListScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Apna Gav Admin",
+                            stringResource(R.string.app_name),
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
                             modifier = Modifier.weight(1f)
                         )
@@ -92,7 +95,7 @@ fun VillageListScreen(
                     TextField(
                         value = state.searchQuery,
                         onValueChange = { viewModel.onSearchQueryChange(it) },
-                        placeholder = { Text("Search Village...", style = MaterialTheme.typography.bodyMedium) },
+                        placeholder = { Text(stringResource(R.string.search), style = MaterialTheme.typography.bodyMedium) },
                         leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, modifier = Modifier.size(20.dp)) },
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
@@ -142,12 +145,11 @@ fun VillageListScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {
-                        Text(text = "${filteredVillages.size} Villages Configured", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(text = stringResource(R.string.villages_configured, filteredVillages.size), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     items(filteredVillages) { village ->
                         VillageItem(
                             village = village,
-                            currentLocale = currentLocale,
                             onClick = { onNavigateToDetails(village.id) },
                             onEdit = { onNavigateToEditVillage(village) },
                             onToggleActive = { viewModel.updateVillage(village.copy(isActive = it)) },
@@ -163,7 +165,6 @@ fun VillageListScreen(
 @Composable
 fun VillageItem(
     village: Village,
-    currentLocale: String,
     onClick: () -> Unit,
     onEdit: () -> Unit,
     onToggleActive: (Boolean) -> Unit,
@@ -191,14 +192,14 @@ fun VillageItem(
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(village.villageName.text(currentLocale), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-                if (village.sarpanchName.text(currentLocale).isNotEmpty()) {
-                    Text("Sarpanch: ${village.sarpanchName.text(currentLocale)}", style = MaterialTheme.typography.bodySmall, color = PrimaryTeal)
+                Text(village.villageName.text(), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                if (village.sarpanchName.get().isNotEmpty()) {
+                    Text(stringResource(R.string.sarpanch_label, village.sarpanchName.text()), style = MaterialTheme.typography.bodySmall, color = PrimaryTeal)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.LocationOn, contentDescription = null, modifier = Modifier.size(14.dp), tint = PrimaryTeal)
                     Spacer(Modifier.width(4.dp))
-                    Text("${village.district.text(currentLocale)}, ${village.state.text(currentLocale)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${village.district.text()}, ${village.state.text()}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Text("PIN: ${village.pincode}", style = MaterialTheme.typography.labelMedium, color = PrimaryTeal)
             }

@@ -2,6 +2,7 @@ package com.example.apnagavadmin.ui.details
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.*
@@ -13,6 +14,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.example.apnagavadmin.R
 import com.example.apnagavadmin.ui.hubs.PrimaryTeal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,15 +31,27 @@ fun VillageDetailsScreen(
         topBar = {
             TopAppBar(
                 windowInsets = TopAppBarDefaults.windowInsets,
-                title = { Text("Village Management", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                title = { Text(stringResource(R.string.village_management), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
         }
     ) { padding ->
+            val services = listOf(
+                ServiceItem(stringResource(R.string.labour_board), Icons.Rounded.Person, "labour"),
+                ServiceItem(stringResource(R.string.construction_hub), Icons.Rounded.Build, "construction"),
+                ServiceItem(stringResource(R.string.transport_rentals), Icons.Rounded.ShoppingCart, "transport"),
+                ServiceItem(stringResource(R.string.mandi_hub), Icons.Rounded.Info, "mandi"),
+                ServiceItem(stringResource(R.string.health_emergency), Icons.Rounded.Favorite, "health"),
+                ServiceItem(stringResource(R.string.family_functions), Icons.Rounded.Celebration, "family"),
+                ServiceItem(stringResource(R.string.local_news), Icons.Rounded.Notifications, "news"),
+                ServiceItem(stringResource(R.string.village_banners), Icons.Rounded.Star, "banners"),
+                ServiceItem(stringResource(R.string.notifications), Icons.Rounded.NotificationsActive, "notifications")
+            )
+
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             modifier = Modifier.fillMaxSize(),
@@ -50,21 +66,10 @@ fun VillageDetailsScreen(
         ) {
             item(span = { GridItemSpan(2) }) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Admin Dashboard", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold), color = PrimaryTeal)
-                    Text("Village ID: $villageId", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.admin_dashboard), style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold), color = PrimaryTeal)
+                    Text(stringResource(R.string.village_id_label, villageId), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-
-            val services = listOf(
-                ServiceItem("Labour Board", Icons.Rounded.Person, "labour"),
-                ServiceItem("Construction", Icons.Rounded.Build, "construction"),
-                ServiceItem("Transport", Icons.Rounded.ShoppingCart, "transport"),
-                ServiceItem("Mandi Prices", Icons.Rounded.Info, "mandi"),
-                ServiceItem("Health Hub", Icons.Rounded.Favorite, "health"),
-                ServiceItem("Village News", Icons.Rounded.Notifications, "news"),
-                ServiceItem("Banners", Icons.Rounded.Star, "banners"),
-                ServiceItem("Notifications", Icons.Rounded.NotificationsActive, "notifications")
-            )
 
             items(services) { service ->
                 Box(modifier = Modifier.padding(
@@ -86,27 +91,57 @@ data class ServiceItem(val name: String, val icon: ImageVector, val route: Strin
 fun ServiceGridCard(name: String, icon: ImageVector, onClick: () -> Unit) {
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(140.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(130.dp),
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Subtle background decoration
             Surface(
-                modifier = Modifier.size(56.dp),
-                shape = MaterialTheme.shapes.medium,
-                color = PrimaryTeal.copy(alpha = 0.1f)
+                modifier = Modifier
+                    .size(80.dp)
+                    .align(Alignment.TopEnd)
+                    .offset(x = 20.dp, y = (-20).dp),
+                shape = CircleShape,
+                color = PrimaryTeal.copy(alpha = 0.05f)
+            ) {}
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(icon, contentDescription = null, modifier = Modifier.size(32.dp), tint = PrimaryTeal)
+                Surface(
+                    modifier = Modifier.size(44.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = PrimaryTeal.copy(alpha = 0.12f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = PrimaryTeal
+                        )
+                    }
                 }
+                
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        lineHeight = 20.sp,
+                        fontSize = 15.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2
+                )
             }
-            Spacer(Modifier.height(12.dp))
-            Text(name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
         }
     }
 }

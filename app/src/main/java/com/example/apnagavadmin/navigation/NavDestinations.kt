@@ -60,5 +60,11 @@ sealed interface NavRoute {
     data class UpsertNotification(val villageId: String, val model: AppNotification? = null) : NavRoute
 
     @Serializable
+    data class FamilyFunctionScreen(val villageId: String) : NavRoute
+
+    @Serializable
+    data class UpsertFamilyFunction(val villageId: String, val categoryId: String, val model: FamilyFunctionHub? = null) : NavRoute
+
+    @Serializable
     data class UpsertVillage(val model: Village? = null) : NavRoute
 }

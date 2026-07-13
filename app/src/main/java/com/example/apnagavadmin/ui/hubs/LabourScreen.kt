@@ -15,6 +15,7 @@ import com.example.apnagavadmin.R
 import com.example.apnagavadmin.data.model.LabourCategory
 import com.example.apnagavadmin.data.model.LabourProvider
 import com.example.apnagavadmin.data.model.Village
+import com.example.apnagavadmin.data.model.text
 
 @Composable
 fun LabourScreen(
@@ -66,7 +67,7 @@ fun LabourScreen(
                         Icons.Rounded.Info to stringResource(R.string.charges_label, provider.charges.text())
                     ),
                     onEdit = { onNavigateToEdit(selectedCategory!!.id, provider) },
-                    onDelete = { viewModel.deleteProvider(provider) }
+                    onDelete = { viewModel.delete(provider) }
                 )
             }
         }

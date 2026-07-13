@@ -7,16 +7,22 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.lifecycle.lifecycleScope
 import com.example.apnagavadmin.data.repository.NewsBannerRepository
 import com.example.apnagavadmin.navigation.NavRoute
 import com.example.apnagavadmin.ui.navigation.ApnaGavNavHost
 import com.example.apnagavadmin.ui.theme.ApnaGavAdminTheme
 import com.example.apnagavadmin.util.DummyDataGenerator
+import com.example.apnagavadmin.util.PreferenceManager
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        val preferenceManager = PreferenceManager(this)
+
         // Initialize Notification Service Account
         try {
             NewsBannerRepository.serviceAccountProvider = {
@@ -31,8 +37,13 @@ class MainActivity : AppCompatActivity() {
             navigationBarStyle = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
         )
 
-        // Generate dummy data (Remove or comment this after first run)
-        DummyDataGenerator().generateAllData()
+        // Generate dummy data only once
+        lifecycleScope.launch {
+            if (!preferenceManager.isDummyDataGenerated.first()) {
+                DummyDataGenerator().generateAllData()
+                preferenceManager.setDummyDataGenerated(true)
+            }
+        }
 
         setContent {
             ApnaGavAdminTheme {

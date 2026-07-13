@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.apnagavadmin.data.model.*
 import com.example.apnagavadmin.data.repository.*
+import com.example.apnagavadmin.util.AppError
 import com.example.apnagavadmin.util.Resource
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -12,19 +13,79 @@ data class HubState<T>(
     val items: List<T> = emptyList(),
     val categories: List<LabourCategory> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null,
+    val error: AppError? = null,
     val searchQuery: String = ""
 )
 
-class LabourViewModel(
-    private val repository: LabourRepository = LabourRepository(),
-    private val villageRepository: VillageRepository = VillageRepository(),
-    private val villageId: String
+abstract class BaseHubViewModel<T>(
+    protected val villageId: String,
+    protected val villageRepository: VillageRepository = VillageRepository()
 ) : ViewModel() {
-    private val _state = MutableStateFlow(HubState<LabourProvider>())
+    protected val _state = MutableStateFlow(HubState<T>())
     val state = _state.asStateFlow()
 
-    private var selectedCategoryId: String = ""
+    protected var selectedCategoryId: String? = null
+
+    fun selectCategory(categoryId: String?) {
+        selectedCategoryId = categoryId
+        load()
+    }
+
+    fun onSearchQueryChange(query: String) {
+        _state.update { it.copy(searchQuery = query) }
+    }
+
+    abstract fun load()
+    abstract fun save(item: T)
+    abstract fun delete(item: T)
+
+    /**
+     * Helper to handle a flow of resources in the state
+     */
+    protected fun <R> collectResource(
+        flow: Flow<Resource<List<R>>>,
+        distinctSelector: (R) -> Any? = { it }
+    ) = viewModelScope.launch {
+        flow.collect { res ->
+            when (res) {
+                is Resource.Loading -> _state.update { it.copy(isLoading = true) }
+                is Resource.Success -> {
+                    val items = res.data ?: emptyList()
+                    @Suppress("UNCHECKED_CAST")
+                    val finalItems = if (villageId == "all") {
+                        items.distinctBy(distinctSelector)
+                    } else items
+                    _state.update { it.copy(isLoading = false, items = finalItems as List<T>) }
+                }
+                is Resource.Error -> _state.update { it.copy(isLoading = false, error = res.error) }
+            }
+        }
+    }
+
+    /**
+     * Helper for saving items to all villages if villageId is "all"
+     */
+    protected fun performSave(
+        isNew: Boolean,
+        item: T,
+        saveAction: suspend (String, T) -> Resource<Unit>
+    ) = viewModelScope.launch {
+        if (villageId == "all" && isNew) {
+            villageRepository.getVillages().filter { it is Resource.Success }.first().data?.forEach { v ->
+                saveAction(v.id, item)
+            }
+        } else {
+            val vId = if (villageId == "all") (item as? HubItem)?.villageId ?: villageId else villageId
+            saveAction(vId, item)
+        }
+    }
+}
+
+class LabourViewModel(
+    private val repository: LabourRepository = LabourRepository(),
+    villageRepository: VillageRepository = VillageRepository(),
+    villageId: String
+) : BaseHubViewModel<LabourProvider>(villageId, villageRepository) {
 
     init {
         loadCategories()
@@ -49,106 +110,51 @@ class LabourViewModel(
         }
     }
 
-    fun selectCategory(categoryId: String) {
-        selectedCategoryId = categoryId
-        loadProviders()
-    }
-
-    private fun loadProviders() {
-        viewModelScope.launch {
-            repository.getProviders(villageId, selectedCategoryId).collect { res ->
-                when (res) {
-                    is Resource.Loading -> _state.update { it.copy(isLoading = true) }
-                    is Resource.Success -> {
-                        val items = res.data ?: emptyList()
-                        val finalItems = if (villageId == "all") {
-                            items.distinctBy { "${it.name}_${it.contact}_${it.categoryId}" }
-                        } else items
-                        _state.update { it.copy(isLoading = false, items = finalItems) }
-                    }
-                    is Resource.Error -> _state.update { it.copy(isLoading = false, error = res.message) }
-                }
-            }
+    override fun load() {
+        selectedCategoryId?.let { catId ->
+            collectResource(repository.getProviders(villageId, catId)) { "${it.name}_${it.contact}_${it.categoryId}" }
         }
     }
 
-    fun onSearchQueryChange(query: String) { _state.update { it.copy(searchQuery = query) } }
-
-    fun saveProvider(provider: LabourProvider) { 
-        viewModelScope.launch { 
-            if (villageId == "all" && provider.id.isEmpty()) {
-                villageRepository.getVillages().filter { it is Resource.Success }.first().data?.forEach { v ->
-                    repository.saveProvider(v.id, provider.copy(villageId = v.id, categoryId = selectedCategoryId))
-                }
-            } else {
-                val vId = if (villageId == "all") provider.villageId else villageId
-                repository.saveProvider(vId, provider.copy(villageId = vId, categoryId = selectedCategoryId)) 
-            }
-        } 
+    override fun save(item: LabourProvider) {
+        performSave(item.id.isEmpty(), item) { vId, p ->
+            repository.saveProvider(vId, p.copy(villageId = vId, categoryId = selectedCategoryId ?: ""))
+        }
     }
 
-    fun deleteProvider(provider: LabourProvider) { 
-        viewModelScope.launch { 
+    override fun delete(item: LabourProvider) {
+        viewModelScope.launch {
             if (villageId == "all") {
-                repository.getProviders("all", selectedCategoryId).filter { it is Resource.Success }.first().data?.forEach { p ->
-                    if (p.name == provider.name && p.contact == provider.contact) {
+                repository.getProviders("all", selectedCategoryId ?: "").filter { it is Resource.Success }.first().data?.forEach { p ->
+                    if (p.name == item.name && p.contact == item.contact) {
                         repository.deleteProvider(p.villageId, p.id)
                     }
                 }
             } else {
-                repository.deleteProvider(villageId, provider.id) 
+                repository.deleteProvider(villageId, item.id)
             }
-        } 
+        }
     }
 }
 
 class ConstructionViewModel(
     private val repository: ConstructionRepository = ConstructionRepository(),
-    private val villageRepository: VillageRepository = VillageRepository(),
-    private val villageId: String
-) : ViewModel() {
-    private val _state = MutableStateFlow(HubState<ConstructionHub>())
-    val state = _state.asStateFlow()
-    
-    private var selectedCategoryId: String? = null
+    villageRepository: VillageRepository = VillageRepository(),
+    villageId: String
+) : BaseHubViewModel<ConstructionHub>(villageId, villageRepository) {
 
-    fun selectCategory(categoryId: String?) {
-        selectedCategoryId = categoryId
-        load()
+    override fun load() {
+        collectResource(repository.getHubs(villageId, selectedCategoryId)) { "${it.shopName}_${it.contact}_${it.categoryId}" }
     }
 
-    private fun load() = viewModelScope.launch {
-        repository.getHubs(villageId, selectedCategoryId).collect { res ->
-            when (res) {
-                is Resource.Loading -> _state.update { it.copy(isLoading = true) }
-                is Resource.Success -> {
-                    val items = res.data ?: emptyList()
-                    val finalItems = if (villageId == "all") {
-                        items.distinctBy { "${it.shopName}_${it.contact}_${it.categoryId}" }
-                    } else items
-                    _state.update { it.copy(isLoading = false, items = finalItems) }
-                }
-                is Resource.Error -> _state.update { it.copy(isLoading = false, error = res.message) }
-            }
+    override fun save(item: ConstructionHub) {
+        performSave(item.id.isEmpty(), item) { vId, h ->
+            repository.saveHub(vId, h.copy(villageId = vId, categoryId = selectedCategoryId ?: "bricks"))
         }
     }
-    fun onSearchQueryChange(q: String) { _state.update { it.copy(searchQuery = q) } }
-    
-    fun save(item: ConstructionHub) { 
-        viewModelScope.launch { 
-            if (villageId == "all" && item.id.isEmpty()) {
-                villageRepository.getVillages().filter { it is Resource.Success }.first().data?.forEach { v ->
-                    repository.saveHub(v.id, item.copy(villageId = v.id, categoryId = selectedCategoryId ?: "bricks"))
-                }
-            } else {
-                val vId = if (villageId == "all") item.villageId else villageId
-                repository.saveHub(vId, item.copy(villageId = vId, categoryId = selectedCategoryId ?: "bricks")) 
-            }
-        } 
-    }
-    
-    fun delete(item: ConstructionHub) { 
-        viewModelScope.launch { 
+
+    override fun delete(item: ConstructionHub) {
+        viewModelScope.launch {
             if (villageId == "all") {
                 repository.getHubs("all", selectedCategoryId).filter { it is Resource.Success }.first().data?.forEach { h ->
                     if (h.shopName == item.shopName && h.contact == item.contact) {
@@ -156,59 +162,30 @@ class ConstructionViewModel(
                     }
                 }
             } else {
-                repository.deleteHub(villageId, item.id) 
+                repository.deleteHub(villageId, item.id)
             }
-        } 
+        }
     }
 }
 
 class TransportViewModel(
     private val repository: TransportRepository = TransportRepository(),
-    private val villageRepository: VillageRepository = VillageRepository(),
-    private val villageId: String
-) : ViewModel() {
-    private val _state = MutableStateFlow(HubState<TransportHub>())
-    val state = _state.asStateFlow()
-    
-    private var selectedCategoryId: String? = null
+    villageRepository: VillageRepository = VillageRepository(),
+    villageId: String
+) : BaseHubViewModel<TransportHub>(villageId, villageRepository) {
 
-    fun selectCategory(categoryId: String?) {
-        selectedCategoryId = categoryId
-        load()
+    override fun load() {
+        collectResource(repository.getHubs(villageId, selectedCategoryId)) { "${it.name}_${it.contact}_${it.categoryId}" }
     }
 
-    private fun load() = viewModelScope.launch {
-        repository.getHubs(villageId, selectedCategoryId).collect { res ->
-            when (res) {
-                is Resource.Loading -> _state.update { it.copy(isLoading = true) }
-                is Resource.Success -> {
-                    val items = res.data ?: emptyList()
-                    val finalItems = if (villageId == "all") {
-                        items.distinctBy { "${it.name}_${it.contact}_${it.categoryId}" }
-                    } else items
-                    _state.update { it.copy(isLoading = false, items = finalItems) }
-                }
-                is Resource.Error -> _state.update { it.copy(isLoading = false, error = res.message) }
-            }
+    override fun save(item: TransportHub) {
+        performSave(item.id.isEmpty(), item) { vId, t ->
+            repository.saveHub(vId, t.copy(villageId = vId, categoryId = selectedCategoryId ?: "tractor"))
         }
     }
-    fun onSearchQueryChange(q: String) { _state.update { it.copy(searchQuery = q) } }
-    
-    fun save(item: TransportHub) { 
-        viewModelScope.launch { 
-            if (villageId == "all" && item.id.isEmpty()) {
-                villageRepository.getVillages().filter { it is Resource.Success }.first().data?.forEach { v ->
-                    repository.saveHub(v.id, item.copy(villageId = v.id, categoryId = selectedCategoryId ?: "tractor"))
-                }
-            } else {
-                val vId = if (villageId == "all") item.villageId else villageId
-                repository.saveHub(vId, item.copy(villageId = vId, categoryId = selectedCategoryId ?: "tractor")) 
-            }
-        } 
-    }
-    
-    fun delete(item: TransportHub) { 
-        viewModelScope.launch { 
+
+    override fun delete(item: TransportHub) {
+        viewModelScope.launch {
             if (villageId == "all") {
                 repository.getHubs("all", selectedCategoryId).filter { it is Resource.Success }.first().data?.forEach { t ->
                     if (t.name == item.name && t.contact == item.contact) {
@@ -216,59 +193,30 @@ class TransportViewModel(
                     }
                 }
             } else {
-                repository.deleteHub(villageId, item.id) 
+                repository.deleteHub(villageId, item.id)
             }
-        } 
+        }
     }
 }
 
 class MandiViewModel(
     private val repository: MandiRepository = MandiRepository(),
-    private val villageRepository: VillageRepository = VillageRepository(),
-    private val villageId: String
-) : ViewModel() {
-    private val _state = MutableStateFlow(HubState<MandiPrice>())
-    val state = _state.asStateFlow()
+    villageRepository: VillageRepository = VillageRepository(),
+    villageId: String
+) : BaseHubViewModel<MandiPrice>(villageId, villageRepository) {
 
-    private var selectedCategoryId: String? = null
-
-    fun selectCategory(categoryId: String?) {
-        selectedCategoryId = categoryId
-        load()
+    override fun load() {
+        collectResource(repository.getPrices(villageId, selectedCategoryId)) { "${it.cropName}_${it.price}_${it.unit}_${it.buyerName}_${it.categoryId}" }
     }
 
-    private fun load() = viewModelScope.launch {
-        repository.getPrices(villageId, selectedCategoryId).collect { res ->
-            when (res) {
-                is Resource.Loading -> _state.update { it.copy(isLoading = true) }
-                is Resource.Success -> {
-                    val items = res.data ?: emptyList()
-                    val finalItems = if (villageId == "all") {
-                        items.distinctBy { "${it.cropName}_${it.price}_${it.unit}_${it.buyerName}_${it.categoryId}" }
-                    } else items
-                    _state.update { it.copy(isLoading = false, items = finalItems) }
-                }
-                is Resource.Error -> _state.update { it.copy(isLoading = false, error = res.message) }
-            }
+    override fun save(item: MandiPrice) {
+        performSave(item.id.isEmpty(), item) { vId, m ->
+            repository.savePrice(vId, m.copy(villageId = vId, categoryId = selectedCategoryId ?: "prices"))
         }
     }
-    fun onSearchQueryChange(q: String) { _state.update { it.copy(searchQuery = q) } }
-    
-    fun save(item: MandiPrice) { 
-        viewModelScope.launch { 
-            if (villageId == "all" && item.id.isEmpty()) {
-                villageRepository.getVillages().filter { it is Resource.Success }.first().data?.forEach { v ->
-                    repository.savePrice(v.id, item.copy(villageId = v.id, categoryId = selectedCategoryId ?: "prices"))
-                }
-            } else {
-                val vId = if (villageId == "all") item.villageId else villageId
-                repository.savePrice(vId, item.copy(villageId = vId, categoryId = selectedCategoryId ?: "prices")) 
-            }
-        } 
-    }
-    
-    fun delete(item: MandiPrice) { 
-        viewModelScope.launch { 
+
+    override fun delete(item: MandiPrice) {
+        viewModelScope.launch {
             if (villageId == "all") {
                 repository.getPrices("all", selectedCategoryId).filter { it is Resource.Success }.first().data?.forEach { m ->
                     if (m.cropName == item.cropName && m.price == item.price && m.unit == item.unit) {
@@ -276,59 +224,30 @@ class MandiViewModel(
                     }
                 }
             } else {
-                repository.deletePrice(villageId, item.id) 
+                repository.deletePrice(villageId, item.id)
             }
-        } 
+        }
     }
 }
 
 class HealthViewModel(
     private val repository: HealthRepository = HealthRepository(),
-    private val villageRepository: VillageRepository = VillageRepository(),
-    private val villageId: String
-) : ViewModel() {
-    private val _state = MutableStateFlow(HubState<HealthHub>())
-    val state = _state.asStateFlow()
+    villageRepository: VillageRepository = VillageRepository(),
+    villageId: String
+) : BaseHubViewModel<HealthHub>(villageId, villageRepository) {
 
-    private var selectedCategoryId: String? = null
-
-    fun selectCategory(categoryId: String?) {
-        selectedCategoryId = categoryId
-        load()
+    override fun load() {
+        collectResource(repository.getHubs(villageId, selectedCategoryId)) { "${it.name}_${it.contact}_${it.categoryId}" }
     }
 
-    private fun load() = viewModelScope.launch {
-        repository.getHubs(villageId, selectedCategoryId).collect { res ->
-            when (res) {
-                is Resource.Loading -> _state.update { it.copy(isLoading = true) }
-                is Resource.Success -> {
-                    val items = res.data ?: emptyList()
-                    val finalItems = if (villageId == "all") {
-                        items.distinctBy { "${it.name}_${it.contact}_${it.categoryId}" }
-                    } else items
-                    _state.update { it.copy(isLoading = false, items = finalItems) }
-                }
-                is Resource.Error -> _state.update { it.copy(isLoading = false, error = res.message) }
-            }
+    override fun save(item: HealthHub) {
+        performSave(item.id.isEmpty(), item) { vId, h ->
+            repository.saveHub(vId, h.copy(villageId = vId, categoryId = selectedCategoryId ?: "doctors"))
         }
     }
-    fun onSearchQueryChange(q: String) { _state.update { it.copy(searchQuery = q) } }
-    
-    fun save(item: HealthHub) { 
-        viewModelScope.launch { 
-            if (villageId == "all" && item.id.isEmpty()) {
-                villageRepository.getVillages().filter { it is Resource.Success }.first().data?.forEach { v ->
-                    repository.saveHub(v.id, item.copy(villageId = v.id, categoryId = selectedCategoryId ?: "doctors"))
-                }
-            } else {
-                val vId = if (villageId == "all") item.villageId else villageId
-                repository.saveHub(vId, item.copy(villageId = vId, categoryId = selectedCategoryId ?: "doctors")) 
-            }
-        } 
-    }
-    
-    fun delete(item: HealthHub) { 
-        viewModelScope.launch { 
+
+    override fun delete(item: HealthHub) {
+        viewModelScope.launch {
             if (villageId == "all") {
                 repository.getHubs("all", selectedCategoryId).filter { it is Resource.Success }.first().data?.forEach { h ->
                     if (h.name == item.name && h.contact == item.contact) {
@@ -336,52 +255,32 @@ class HealthViewModel(
                     }
                 }
             } else {
-                repository.deleteHub(villageId, item.id) 
+                repository.deleteHub(villageId, item.id)
             }
-        } 
+        }
     }
 }
 
 class NewsViewModel(
     private val repository: NewsBannerRepository = NewsBannerRepository(),
-    private val villageRepository: VillageRepository = VillageRepository(),
-    private val villageId: String
-) : ViewModel() {
-    private val _state = MutableStateFlow(HubState<News>())
-    val state = _state.asStateFlow()
+    villageRepository: VillageRepository = VillageRepository(),
+    villageId: String
+) : BaseHubViewModel<News>(villageId, villageRepository) {
+
     init { load() }
-    private fun load() = viewModelScope.launch {
-        repository.getNews(villageId).collect { res ->
-            when (res) {
-                is Resource.Loading -> _state.update { it.copy(isLoading = true) }
-                is Resource.Success -> {
-                    val items = res.data ?: emptyList()
-                    val finalItems = if (villageId == "all") {
-                        items.distinctBy { "${it.title}_${it.description}_${it.category}" }
-                    } else items
-                    _state.update { it.copy(isLoading = false, items = finalItems) }
-                }
-                is Resource.Error -> _state.update { it.copy(isLoading = false, error = res.message) }
-            }
+
+    override fun load() {
+        collectResource(repository.getNews(villageId)) { "${it.title}_${it.description}_${it.category}" }
+    }
+
+    override fun save(item: News) {
+        performSave(item.id.isEmpty(), item) { vId, n ->
+            repository.saveNews(vId, n.copy(villageId = vId))
         }
     }
-    fun onSearchQueryChange(q: String) { _state.update { it.copy(searchQuery = q) } }
-    
-    fun save(item: News) { 
-        viewModelScope.launch { 
-            if (villageId == "all" && item.id.isEmpty()) {
-                villageRepository.getVillages().filter { it is Resource.Success }.first().data?.forEach { v ->
-                    repository.saveNews(v.id, item.copy(villageId = v.id))
-                }
-            } else {
-                val vId = if (villageId == "all") item.villageId else villageId
-                repository.saveNews(vId, item.copy(villageId = vId)) 
-            }
-        } 
-    }
-    
-    fun delete(item: News) { 
-        viewModelScope.launch { 
+
+    override fun delete(item: News) {
+        viewModelScope.launch {
             if (villageId == "all") {
                 repository.getNews("all").filter { it is Resource.Success }.first().data?.forEach { n ->
                     if (n.title == item.title && n.description == item.description) {
@@ -389,52 +288,32 @@ class NewsViewModel(
                     }
                 }
             } else {
-                repository.deleteNews(villageId, item.id) 
+                repository.deleteNews(villageId, item.id)
             }
-        } 
+        }
     }
 }
 
 class BannerViewModel(
     private val repository: NewsBannerRepository = NewsBannerRepository(),
-    private val villageRepository: VillageRepository = VillageRepository(),
-    private val villageId: String
-) : ViewModel() {
-    private val _state = MutableStateFlow(HubState<Banner>())
-    val state = _state.asStateFlow()
+    villageRepository: VillageRepository = VillageRepository(),
+    villageId: String
+) : BaseHubViewModel<Banner>(villageId, villageRepository) {
+
     init { load() }
-    private fun load() = viewModelScope.launch {
-        repository.getBanners(villageId).collect { res ->
-            when (res) {
-                is Resource.Loading -> _state.update { it.copy(isLoading = true) }
-                is Resource.Success -> {
-                    val items = res.data ?: emptyList()
-                    val finalItems = if (villageId == "all") {
-                        items.distinctBy { "${it.title}_${it.imageUrl}" }
-                    } else items
-                    _state.update { it.copy(isLoading = false, items = finalItems) }
-                }
-                is Resource.Error -> _state.update { it.copy(isLoading = false, error = res.message) }
-            }
+
+    override fun load() {
+        collectResource(repository.getBanners(villageId)) { "${it.title}_${it.imageUrl}" }
+    }
+
+    override fun save(item: Banner) {
+        performSave(item.id.isEmpty(), item) { vId, b ->
+            repository.saveBanner(vId, b.copy(villageId = vId))
         }
     }
-    fun onSearchQueryChange(q: String) { _state.update { it.copy(searchQuery = q) } }
-    
-    fun save(item: Banner) { 
-        viewModelScope.launch { 
-            if (villageId == "all" && item.id.isEmpty()) {
-                villageRepository.getVillages().filter { it is Resource.Success }.first().data?.forEach { v ->
-                    repository.saveBanner(v.id, item.copy(villageId = v.id))
-                }
-            } else {
-                val vId = if (villageId == "all") item.villageId else villageId
-                repository.saveBanner(vId, item.copy(villageId = vId)) 
-            }
-        } 
-    }
-    
-    fun delete(item: Banner) { 
-        viewModelScope.launch { 
+
+    override fun delete(item: Banner) {
+        viewModelScope.launch {
             if (villageId == "all") {
                 repository.getBanners("all").filter { it is Resource.Success }.first().data?.forEach { b ->
                     if (b.title == item.title && b.imageUrl == item.imageUrl) {
@@ -444,51 +323,30 @@ class BannerViewModel(
             } else {
                 repository.deleteBanner(villageId, item.id)
             }
-        } 
+        }
     }
 }
 
 class NotificationViewModel(
     private val repository: NewsBannerRepository = NewsBannerRepository(),
-    private val villageRepository: VillageRepository = VillageRepository(),
-    private val villageId: String
-) : ViewModel() {
-    private val _state = MutableStateFlow(HubState<AppNotification>())
-    val state = _state.asStateFlow()
+    villageRepository: VillageRepository = VillageRepository(),
+    villageId: String
+) : BaseHubViewModel<AppNotification>(villageId, villageRepository) {
+
     init { load() }
-    private fun load() = viewModelScope.launch {
-        repository.getNotifications(villageId).collect { res ->
-            when (res) {
-                is Resource.Loading -> _state.update { it.copy(isLoading = true) }
-                is Resource.Success -> {
-                    val items = res.data ?: emptyList()
-                    val finalItems = if (villageId == "all") {
-                        items.distinctBy { "${it.title}_${it.message}" }
-                    } else items
-                    _state.update { it.copy(isLoading = false, items = finalItems) }
-                }
-                is Resource.Error -> _state.update { it.copy(isLoading = false, error = res.message) }
-            }
+
+    override fun load() {
+        collectResource(repository.getNotifications(villageId)) { "${it.title}_${it.message}" }
+    }
+
+    override fun save(item: AppNotification) {
+        performSave(item.id.isEmpty(), item) { vId, n ->
+            repository.saveNotification(vId, n.copy(villageId = vId))
         }
     }
-    fun onSearchQueryChange(q: String) { _state.update { it.copy(searchQuery = q) } }
-    
-    fun save(item: AppNotification) { 
-        viewModelScope.launch { 
-            if (villageId == "all" && item.id.isEmpty()) {
-                villageRepository.getVillages().filter { it is Resource.Success }.first().data?.forEach { v ->
-                    repository.saveNotification(v.id, item.copy(villageId = v.id))
-                }
-            } else {
-                val vId = if (villageId == "all") item.villageId else villageId
-                // Use a separate scope or non-cancellable context for network operations after save
-                repository.saveNotification(vId, item.copy(villageId = vId)) 
-            }
-        } 
-    }
-    
-    fun delete(item: AppNotification) { 
-        viewModelScope.launch { 
+
+    override fun delete(item: AppNotification) {
+        viewModelScope.launch {
             if (villageId == "all") {
                 repository.getNotifications("all").filter { it is Resource.Success }.first().data?.forEach { n ->
                     if (n.title == item.title && n.message == item.message) {
@@ -498,6 +356,37 @@ class NotificationViewModel(
             } else {
                 repository.deleteNotification(villageId, item.id)
             }
-        } 
+        }
+    }
+}
+
+class FamilyFunctionViewModel(
+    private val repository: FamilyFunctionRepository = FamilyFunctionRepository(),
+    villageRepository: VillageRepository = VillageRepository(),
+    villageId: String
+) : BaseHubViewModel<FamilyFunctionHub>(villageId, villageRepository) {
+
+    override fun load() {
+        collectResource(repository.getHubs(villageId, selectedCategoryId)) { "${it.name}_${it.contact}_${it.categoryId}" }
+    }
+
+    override fun save(item: FamilyFunctionHub) {
+        performSave(item.id.isEmpty(), item) { vId, h ->
+            repository.saveHub(vId, h.copy(villageId = vId, categoryId = selectedCategoryId ?: "tent"))
+        }
+    }
+
+    override fun delete(item: FamilyFunctionHub) {
+        viewModelScope.launch {
+            if (villageId == "all") {
+                repository.getHubs("all", selectedCategoryId).filter { it is Resource.Success }.first().data?.forEach { h ->
+                    if (h.name == item.name && h.contact == item.contact) {
+                        repository.deleteHub(h.villageId, h.id)
+                    }
+                }
+            } else {
+                repository.deleteHub(villageId, item.id)
+            }
+        }
     }
 }

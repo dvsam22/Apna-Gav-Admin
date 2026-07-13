@@ -18,6 +18,6 @@ data class ConstructionHub(
     val address: LocalizedString = LocalizedString(),
     val products: List<ConstructionProduct> = emptyList(),
     val image: String = "",
-    val villageId: String = "",
+    override val villageId: String = "",
     val categoryId: String = "" // "bricks" or "material_shops"
-)
+) : HubItem
