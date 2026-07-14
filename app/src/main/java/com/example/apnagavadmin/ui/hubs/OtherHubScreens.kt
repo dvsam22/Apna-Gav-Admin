@@ -575,8 +575,6 @@ fun NewsScreen(
             val filteredItems = state.items.filter { 
                 it.title.en.contains(state.searchQuery, true) || it.title.hi.contains(state.searchQuery, true) 
             }
-            val breakingNews = filteredItems.filter { it.category == "news" }
-            val notices = filteredItems.filter { it.category == "notice" }
 
             androidx.compose.foundation.lazy.LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -588,18 +586,8 @@ fun NewsScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                if (breakingNews.isNotEmpty()) {
-                    item { Text(stringResource(R.string.breaking_news), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) }
-                    items(breakingNews) { item ->
-                        NewsCard(item, onClick = { selectedNews = item }, onEdit = { onNavigateToEdit(item) }, onDelete = { viewModel.delete(item) })
-                    }
-                }
-
-                if (notices.isNotEmpty()) {
-                    item { Text(stringResource(R.string.notices), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) }
-                    items(notices) { item ->
-                        NoticeCard(item, onClick = { selectedNews = item }, onEdit = { onNavigateToEdit(item) }, onDelete = { viewModel.delete(item) })
-                    }
+                items(filteredItems) { item ->
+                    NewsCard(item, onClick = { selectedNews = item }, onEdit = { onNavigateToEdit(item) }, onDelete = { viewModel.delete(item) })
                 }
             }
         }
@@ -616,13 +604,23 @@ fun NewsCard(news: News, onClick: () -> Unit, onEdit: () -> Unit, onDelete: () -
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            AsyncImage(
-                model = news.image,
-                contentDescription = null,
-                modifier = Modifier.size(80.dp).clip(MaterialTheme.shapes.medium),
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop
-            )
-            Spacer(Modifier.width(12.dp))
+            if (news.image.isNotEmpty()) {
+                AsyncImage(
+                    model = news.image,
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp).clip(MaterialTheme.shapes.medium),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                )
+                Spacer(Modifier.width(12.dp))
+            } else {
+                Box(
+                    Modifier.size(80.dp).background(PrimaryTeal.copy(0.1f), MaterialTheme.shapes.medium),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Rounded.Newspaper, null, tint = PrimaryTeal)
+                }
+                Spacer(Modifier.width(12.dp))
+            }
             Column(Modifier.weight(1f)) {
                 Text(news.title.text(), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), maxLines = 2)
                 Text(news.description.text(), style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
@@ -630,37 +628,6 @@ fun NewsCard(news: News, onClick: () -> Unit, onEdit: () -> Unit, onDelete: () -
                     Icon(Icons.Rounded.AccessTime, null, modifier = Modifier.size(14.dp), tint = PrimaryTeal)
                     Spacer(Modifier.width(4.dp))
                     Text(stringResource(R.string.ago_label, "2 Hr"), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                }
-            }
-            Row {
-                IconButton(onClick = onEdit) { Icon(Icons.Rounded.Edit, null, tint = PrimaryTeal.copy(0.4f), modifier = Modifier.size(20.dp)) }
-                IconButton(onClick = onDelete) { Icon(Icons.Rounded.Delete, null, tint = MaterialTheme.colorScheme.error.copy(0.4f), modifier = Modifier.size(20.dp)) }
-            }
-        }
-    }
-}
-
-@Composable
-fun NoticeCard(news: News, onClick: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(48.dp).background(PrimaryTeal.copy(0.1f), MaterialTheme.shapes.medium), contentAlignment = Alignment.Center) {
-                Icon(Icons.Rounded.Notifications, null, tint = PrimaryTeal)
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(news.title.text(), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), maxLines = 1)
-                Text(news.description.text(), style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                    Icon(Icons.Rounded.CalendarMonth, null, modifier = Modifier.size(14.dp), tint = PrimaryTeal)
-                    Spacer(Modifier.width(4.dp))
-                    Text("12 June 2025", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 }
             }
             Row {
@@ -725,7 +692,7 @@ fun NotificationScreen(
         NotificationDetailScreen(notification = selectedNotification!!, onBack = { selectedNotification = null })
     } else {
         HubScaffold(
-            title = stringResource(R.string.notifications),
+            title = stringResource(R.string.notices),
             subtitle = stringResource(R.string.total_label, state.items.size),
             onBack = onBack,
             onAdd = { onNavigateToEdit(null) },

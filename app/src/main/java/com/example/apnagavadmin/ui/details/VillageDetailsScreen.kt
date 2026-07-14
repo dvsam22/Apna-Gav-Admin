@@ -47,9 +47,9 @@ fun VillageDetailsScreen(
                 ServiceItem(stringResource(R.string.mandi_hub), Icons.Rounded.Info, "mandi"),
                 ServiceItem(stringResource(R.string.health_emergency), Icons.Rounded.Favorite, "health"),
                 ServiceItem(stringResource(R.string.family_functions), Icons.Rounded.Celebration, "family"),
-                ServiceItem(stringResource(R.string.local_news), Icons.Rounded.Notifications, "news"),
+                ServiceItem(stringResource(R.string.local_news), Icons.Rounded.Newspaper, "news"),
                 ServiceItem(stringResource(R.string.village_banners), Icons.Rounded.Star, "banners"),
-                ServiceItem(stringResource(R.string.notifications), Icons.Rounded.NotificationsActive, "notifications")
+                ServiceItem(stringResource(R.string.notices), Icons.Rounded.NotificationsActive, "notifications")
             )
 
         LazyVerticalGrid(

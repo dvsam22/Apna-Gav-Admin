@@ -53,7 +53,7 @@ data class News(
     val image: String = "",
     val date: Long = System.currentTimeMillis(),
     override val villageId: String = "",
-    val category: String = "news" // "news" (Breaking News), "notice" (Notices)
+    val type: String = "news" // "news" (Breaking News), "notice" (Notices)
 ) : HubItem
 
 @Serializable
@@ -72,5 +72,6 @@ data class AppNotification(
     val title: LocalizedString = LocalizedString(),
     val message: LocalizedString = LocalizedString(),
     val date: Long = System.currentTimeMillis(),
-    override val villageId: String = ""
+    override val villageId: String = "",
+    val type: String = "notification"
 ) : HubItem

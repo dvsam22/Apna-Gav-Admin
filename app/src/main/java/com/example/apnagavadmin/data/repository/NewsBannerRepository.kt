@@ -54,7 +54,7 @@ class NewsBannerRepository(
                 image = getString("image") ?: "",
                 date = getLong("date") ?: System.currentTimeMillis(),
                 villageId = getString("villageId") ?: "",
-                category = getString("category") ?: "news"
+                type = getString("type") ?: "news"
             )
         } catch (e: Exception) { null }
     }
@@ -79,7 +79,8 @@ class NewsBannerRepository(
                 title = toSafeLocalizedString("title"),
                 message = toSafeLocalizedString("message"),
                 date = getLong("date") ?: System.currentTimeMillis(),
-                villageId = getString("villageId") ?: ""
+                villageId = getString("villageId") ?: "",
+                type = getString("type") ?: "notification"
             )
         } catch (e: Exception) { null }
     }
@@ -110,7 +111,12 @@ class NewsBannerRepository(
         }
     }
 
-    private suspend fun sendFcmNotification(villageId: String, title: String, message: String) {
+    private suspend fun sendFcmNotification(
+        villageId: String,
+        title: String,
+        message: String,
+        data: Map<String, String> = emptyMap()
+    ) {
         // Use NonCancellable to ensure notification is sent even if the caller's scope is cancelled
         withContext(Dispatchers.IO + NonCancellable) {
             // Fix Topic Name
@@ -132,6 +138,12 @@ class NewsBannerRepository(
                 val safeTitle = title.replace("\"", "\\\"")
                 val safeMessage = message.replace("\"", "\\\"")
 
+                // Construct the data block if provided
+                val dataBlock = if (data.isNotEmpty()) {
+                    val dataJson = data.entries.joinToString(",") { "\"${it.key}\": \"${it.value}\"" }
+                    "\"data\": { $dataJson },"
+                } else ""
+
                 val json = """
                     {
                       "message": {
@@ -140,6 +152,7 @@ class NewsBannerRepository(
                           "title": "$safeTitle",
                           "body": "$safeMessage"
                         },
+                        $dataBlock
                         "android": {
                           "priority": "high",
                           "notification": {
@@ -201,9 +214,14 @@ class NewsBannerRepository(
         if (vId.isEmpty() || vId == "all") throw Exception("Invalid Village ID")
 
         if (news.id.isEmpty()) {
-            firestore.collection("villages").document(vId).collection("news").add(news.copy(villageId = vId)).await()
+            val docRef = firestore.collection("villages").document(vId).collection("news").add(news.copy(villageId = vId)).await()
             // Send notification for new news
-            sendFcmNotification(vId, "Nayi Khabar: ${news.title.hi}", news.description.hi)
+            sendFcmNotification(
+                villageId = vId,
+                title = "Nayi Khabar: ${news.title.hi}",
+                message = news.description.hi,
+                data = mapOf("id" to docRef.id, "type" to "news")
+            )
         } else {
             firestore.collection("villages").document(vId).collection("news").document(news.id).set(news.copy(villageId = vId)).await()
         }
@@ -275,9 +293,14 @@ class NewsBannerRepository(
         if (vId.isEmpty() || vId == "all") throw Exception("Invalid Village ID")
 
         if (notification.id.isEmpty()) {
-            firestore.collection("villages").document(vId).collection("notifications").add(notification.copy(villageId = vId)).await()
+            val docRef = firestore.collection("villages").document(vId).collection("notifications").add(notification.copy(villageId = vId)).await()
             // Send notification
-            sendFcmNotification(vId, notification.title.hi, notification.message.hi)
+            sendFcmNotification(
+                villageId = vId,
+                title = notification.title.hi,
+                message = notification.message.hi,
+                data = mapOf("id" to docRef.id, "type" to "notification")
+            )
         } else {
             firestore.collection("villages").document(vId).collection("notifications").document(notification.id).set(notification.copy(villageId = vId)).await()
         }

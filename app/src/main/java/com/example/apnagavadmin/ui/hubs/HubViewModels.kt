@@ -270,7 +270,7 @@ class NewsViewModel(
     init { load() }
 
     override fun load() {
-        collectResource(repository.getNews(villageId)) { "${it.title}_${it.description}_${it.category}" }
+        collectResource(repository.getNews(villageId)) { "${it.title}_${it.description}_${it.type}" }
     }
 
     override fun save(item: News) {

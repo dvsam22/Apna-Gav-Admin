@@ -416,9 +416,8 @@ fun NewsEditScreen(
         title = if (newsItem == null) stringResource(R.string.add) else stringResource(R.string.edit),
         onBack = onBack,
         onSave = {
-            val type = if (image.isEmpty()) "notice" else "news"
-            onSave(newsItem?.copy(title = title, description = description, image = image, category = type) 
-                ?: News(title = title, description = description, image = image, category = type))
+            onSave(newsItem?.copy(title = title, description = description, image = image, type = "news") 
+                ?: News(title = title, description = description, image = image, type = "news"))
         }
     ) { padding ->
         Column(
@@ -525,8 +524,8 @@ fun NotificationEditScreen(
         title = if (notification == null) stringResource(R.string.add) else stringResource(R.string.edit),
         onBack = onBack,
         onSave = {
-            onSave(notification?.copy(title = title, message = message) 
-                ?: AppNotification(title = title, message = message))
+            onSave(notification?.copy(title = title, message = message, type = "notification") 
+                ?: AppNotification(title = title, message = message, type = "notification"))
         }
     ) { padding ->
         Column(

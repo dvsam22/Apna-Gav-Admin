@@ -18,6 +18,8 @@ exports.sendVillageNotification = functions.firestore
             // Extra data agar app me handle karna ho
             data: {
                 villageId: villageId,
+                id: context.params.notificationId,
+                type: "notice",
                 click_action: "FLUTTER_NOTIFICATION_CLICK" // Ya jo bhi aapki activity ho
             }
         };
