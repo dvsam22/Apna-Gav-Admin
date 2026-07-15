@@ -19,8 +19,8 @@ class DummyDataGenerator {
     fun generateAllData() {
         CoroutineScope(Dispatchers.IO).launch {
             val villages = listOf(
-                Village("village_maharajganj", LocalizedString("Maharajganj", "महाराजगंज"), LocalizedString("Ram Sewak", "राम सेवक"), LocalizedString("Raebareli", "रायबरेली"), LocalizedString("Uttar Pradesh", "उत्तर प्रदेश"), "229101", 26.38, 81.25, "https://picsum.photos/id/10/400/300"),
-                Village("village_rampur", LocalizedString("Rampur", "रामपुर"), LocalizedString("Sunita Devi", "सुनीता देवी"), LocalizedString("Ghazipur", "गाज़ीपुर"), LocalizedString("Uttar Pradesh", "उत्तर प्रदेश"), "233001", 25.58, 83.57, "https://picsum.photos/id/11/400/300")
+                Village("village_maharajganj", LocalizedString("Maharajganj", "महाराजगंज"), LocalizedString("Ram Sewak", "राम सेवक"), "9876543210", LocalizedString("Raebareli", "रायबरेली"), LocalizedString("Uttar Pradesh", "उत्तर प्रदेश"), "229101", 26.38, 81.25, "https://picsum.photos/id/10/400/300"),
+                Village("village_rampur", LocalizedString("Rampur", "रामपुर"), LocalizedString("Sunita Devi", "सुनीता देवी"), "9876543211", LocalizedString("Ghazipur", "गाज़ीपुर"), LocalizedString("Uttar Pradesh", "उत्तर प्रदेश"), "233001", 25.58, 83.57, "https://picsum.photos/id/11/400/300")
             )
 
             villages.forEach { village ->

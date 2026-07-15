@@ -7,6 +7,7 @@ data class Village(
     val id: String = "",
     val villageName: LocalizedString = LocalizedString(),
     val sarpanchName: LocalizedString = LocalizedString(),
+    val sarpanchPhone: String = "",
     val district: LocalizedString = LocalizedString(),
     val state: LocalizedString = LocalizedString(),
     val pincode: String = "",

@@ -73,6 +73,7 @@
     <string name="edit_village">Edit Village</string>
     <string name="village_name">Village Name</string>
     <string name="sarpanch_name">Sarpanch Name</string>
+    <string name="sarpanch_phone">Sarpanch Phone Number</string>
     <string name="district">District</string>
     <string name="state">State</string>
     <string name="pincode">Pincode</string>

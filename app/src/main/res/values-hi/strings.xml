@@ -73,6 +73,7 @@
     <string name="edit_village">गांव विवरण बदलें</string>
     <string name="village_name">गांव का नाम</string>
     <string name="sarpanch_name">सरपंच का नाम</string>
+    <string name="sarpanch_phone">सरपंच का फोन नंबर</string>
     <string name="district">जिला</string>
     <string name="state">राज्य</string>
     <string name="pincode">पिनकोड</string>

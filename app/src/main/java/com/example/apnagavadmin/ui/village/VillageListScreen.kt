@@ -196,6 +196,13 @@ fun VillageItem(
                 if (village.sarpanchName.get().isNotEmpty()) {
                     Text(stringResource(R.string.sarpanch_label, village.sarpanchName.text()), style = MaterialTheme.typography.bodySmall, color = PrimaryTeal)
                 }
+                if (village.sarpanchPhone.isNotEmpty()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Phone, contentDescription = null, modifier = Modifier.size(12.dp), tint = PrimaryTeal.copy(alpha = 0.7f))
+                        Spacer(Modifier.width(4.dp))
+                        Text(village.sarpanchPhone, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.LocationOn, contentDescription = null, modifier = Modifier.size(14.dp), tint = PrimaryTeal)
                     Spacer(Modifier.width(4.dp))

@@ -602,6 +602,7 @@ fun VillageEditScreen(
 ) {
     var name by remember { mutableStateOf(village?.villageName ?: LocalizedString()) }
     var sarpanchName by remember { mutableStateOf(village?.sarpanchName ?: LocalizedString()) }
+    var sarpanchPhone by remember { mutableStateOf(village?.sarpanchPhone ?: "") }
     var district by remember { mutableStateOf(village?.district ?: LocalizedString()) }
     var state by remember { mutableStateOf(village?.state ?: LocalizedString()) }
     var pincode by remember { mutableStateOf(village?.pincode ?: "") }
@@ -613,10 +614,10 @@ fun VillageEditScreen(
         onBack = onBack,
         onSave = {
             onSave(village?.copy(
-                villageName = name, sarpanchName = sarpanchName, district = district, state = state, 
+                villageName = name, sarpanchName = sarpanchName, sarpanchPhone = sarpanchPhone, district = district, state = state, 
                 pincode = pincode, lat = lat.toDoubleOrNull() ?: 0.0, lng = lng.toDoubleOrNull() ?: 0.0
             ) ?: Village(
-                villageName = name, sarpanchName = sarpanchName, district = district, state = state, 
+                villageName = name, sarpanchName = sarpanchName, sarpanchPhone = sarpanchPhone, district = district, state = state, 
                 pincode = pincode, lat = lat.toDoubleOrNull() ?: 0.0, lng = lng.toDoubleOrNull() ?: 0.0
             ))
         }
@@ -634,6 +635,17 @@ fun VillageEditScreen(
             LocalizedTextField(value = name, onValueChange = { name = it }, label = stringResource(R.string.village_name), icon = Icons.Rounded.Home)
             LocalizedTextField(value = sarpanchName, onValueChange = { sarpanchName = it }, label = stringResource(R.string.sarpanch_name), icon = Icons.Rounded.Person)
             
+            OutlinedTextField(
+                value = sarpanchPhone,
+                onValueChange = { sarpanchPhone = it },
+                label = { Text(stringResource(R.string.sarpanch_phone)) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                leadingIcon = { Icon(Icons.Rounded.Phone, null, tint = PrimaryTeal) },
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryTeal, unfocusedContainerColor = Color.White),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Phone)
+            )
+
             Text("LOCATION DETAILS", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = Color.Gray)
             LocalizedTextField(value = district, onValueChange = { district = it }, label = stringResource(R.string.district), icon = Icons.Rounded.LocationCity)
             LocalizedTextField(value = state, onValueChange = { state = it }, label = stringResource(R.string.state), icon = Icons.Rounded.Public)
