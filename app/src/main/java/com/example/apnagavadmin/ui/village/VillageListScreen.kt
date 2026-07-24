@@ -105,12 +105,43 @@ fun VillageListScreen(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
                             .heightIn(min = 44.dp, max = 48.dp),
                         shape = MaterialTheme.shapes.medium,
                         singleLine = true,
                         textStyle = MaterialTheme.typography.bodyMedium
                     )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = state.selectedFilter == VillageFilter.ALL,
+                            onClick = { viewModel.onFilterChange(VillageFilter.ALL) },
+                            label = { Text("All (${state.villages.size})") }
+                        )
+                        FilterChip(
+                            selected = state.selectedFilter == VillageFilter.ACTIVE,
+                            onClick = { viewModel.onFilterChange(VillageFilter.ACTIVE) },
+                            label = { Text("Active (${state.villages.count { it.isActive }})") },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = PrimaryTeal.copy(alpha = 0.15f),
+                                selectedLabelColor = PrimaryTeal
+                            )
+                        )
+                        FilterChip(
+                            selected = state.selectedFilter == VillageFilter.INACTIVE,
+                            onClick = { viewModel.onFilterChange(VillageFilter.INACTIVE) },
+                            label = { Text("Deactive (${state.villages.count { !it.isActive }})") },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                                selectedLabelColor = MaterialTheme.colorScheme.error
+                            )
+                        )
+                    }
                 }
             }
         },
@@ -130,9 +161,17 @@ fun VillageListScreen(
             } else if (state.error != null) {
                 Text(state.error ?: "Unknown error", color = MaterialTheme.colorScheme.error, modifier = Modifier.align(Alignment.Center).padding(padding))
             } else {
-                val filteredVillages = state.villages.filter { 
-                    it.villageName.en.contains(state.searchQuery, ignoreCase = true) || 
-                    it.villageName.hi.contains(state.searchQuery, ignoreCase = true) 
+                val filteredVillages = state.villages.filter { village ->
+                    val matchesSearch = village.villageName.en.contains(state.searchQuery, ignoreCase = true) || 
+                                        village.villageName.hi.contains(state.searchQuery, ignoreCase = true) ||
+                                        village.district.en.contains(state.searchQuery, ignoreCase = true) ||
+                                        village.district.hi.contains(state.searchQuery, ignoreCase = true)
+                    val matchesFilter = when (state.selectedFilter) {
+                        VillageFilter.ALL -> true
+                        VillageFilter.ACTIVE -> village.isActive
+                        VillageFilter.INACTIVE -> !village.isActive
+                    }
+                    matchesSearch && matchesFilter
                 }
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -147,12 +186,12 @@ fun VillageListScreen(
                     item {
                         Text(text = stringResource(R.string.villages_configured, filteredVillages.size), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    items(filteredVillages) { village ->
+                    items(filteredVillages, key = { it.id }) { village ->
                         VillageItem(
                             village = village,
                             onClick = { onNavigateToDetails(village.id) },
                             onEdit = { onNavigateToEditVillage(village) },
-                            onToggleActive = { viewModel.updateVillage(village.copy(isActive = it)) },
+                            onToggleActive = { viewModel.toggleVillageActive(village, it) },
                             onDelete = { viewModel.deleteVillage(village.id) }
                         )
                     }

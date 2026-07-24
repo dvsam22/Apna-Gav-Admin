@@ -39,6 +39,9 @@ class MainActivity : AppCompatActivity() {
 
         // Generate dummy data only once
         lifecycleScope.launch {
+            // Force reset for new village list (Remove this line after first run)
+            // preferenceManager.setDummyDataGenerated(false) 
+
             if (!preferenceManager.isDummyDataGenerated.first()) {
                 DummyDataGenerator().generateAllData()
                 preferenceManager.setDummyDataGenerated(true)

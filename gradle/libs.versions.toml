@@ -46,8 +46,10 @@ datastorePreferences = "1.1.7"
 material = "1.4.0"
 appcompat = "1.7.0"
 googleAuth = "1.23.0"
+mlkitTranslate = "17.0.3"
 
 [libraries]
+mlkit-translate = { group = "com.google.mlkit", name = "translate", version.ref = "mlkitTranslate" }
 google-auth-library-oauth2-http = { group = "com.google.auth", name = "google-auth-library-oauth2-http", version.ref = "googleAuth" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

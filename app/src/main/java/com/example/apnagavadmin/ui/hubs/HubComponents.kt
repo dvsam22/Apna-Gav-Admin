@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -21,6 +22,8 @@ import com.example.apnagavadmin.R
 import com.example.apnagavadmin.data.model.LocalizedString
 import com.example.apnagavadmin.data.model.text
 import com.example.apnagavadmin.util.AppError
+import com.example.apnagavadmin.util.AutoTranslator
+import kotlinx.coroutines.delay
 
 // Target Green for "Call Now"
 val CallNowGreen = Color(0xFF42C18E)
@@ -33,8 +36,22 @@ fun LocalizedTextField(
     label: String,
     modifier: Modifier = Modifier,
     singleLine: Boolean = true,
-    icon: ImageVector? = null
+    icon: ImageVector? = null,
+    isPhonetic: Boolean = false // Set true for Names, Locations, etc.
 ) {
+    var isAutoSyncEnabled by remember { mutableStateOf(value.hi.isEmpty()) }
+
+    // Auto-translation logic
+    LaunchedEffect(value.en) {
+        if (isAutoSyncEnabled && value.en.isNotBlank()) {
+            delay(500) // Debounce translation calls
+            val translated = AutoTranslator.translate(value.en, isPhonetic)
+            if (translated.isNotBlank() && isAutoSyncEnabled) {
+                onValueChange(value.copy(hi = translated))
+            }
+        }
+    }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -42,16 +59,33 @@ fun LocalizedTextField(
         border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.1f))
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (icon != null) {
-                    Icon(icon, null, modifier = Modifier.size(18.dp), tint = PrimaryTeal)
-                    Spacer(Modifier.width(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (icon != null) {
+                        Icon(icon, null, modifier = Modifier.size(18.dp), tint = PrimaryTeal)
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    Text(
+                        text = label.uppercase(),
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
+                        color = PrimaryTeal
+                    )
                 }
-                Text(
-                    text = label.uppercase(),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp),
-                    color = PrimaryTeal
-                )
+                
+                // Auto-sync toggle
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Auto-Sync", style = MaterialTheme.typography.labelSmall, color = if(isAutoSyncEnabled) PrimaryTeal else Color.Gray)
+                    Switch(
+                        checked = isAutoSyncEnabled,
+                        onCheckedChange = { isAutoSyncEnabled = it },
+                        modifier = Modifier.scale(0.6f),
+                        colors = SwitchDefaults.colors(checkedThumbColor = PrimaryTeal)
+                    )
+                }
             }
             
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -83,7 +117,10 @@ fun LocalizedTextField(
                 // Hindi Field
                 OutlinedTextField(
                     value = value.hi,
-                    onValueChange = { onValueChange(value.copy(hi = it)) },
+                    onValueChange = { 
+                        isAutoSyncEnabled = false // Disable sync if user types manually
+                        onValueChange(value.copy(hi = it)) 
+                    },
                     placeholder = { Text(stringResource(R.string.hindi), style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = singleLine,

@@ -81,7 +81,7 @@ fun LabourEditScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Text("BASIC INFORMATION", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = Color.Gray)
-            LocalizedTextField(value = name, onValueChange = { name = it }, label = stringResource(R.string.name), icon = Icons.Rounded.Person)
+            LocalizedTextField(value = name, onValueChange = { name = it }, label = stringResource(R.string.name), icon = Icons.Rounded.Person, isPhonetic = true)
             
             OutlinedTextField(
                 value = contact, 
@@ -236,7 +236,7 @@ fun TransportEditScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Text("VEHICLE & OWNER", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = Color.Gray)
-            LocalizedTextField(name, { name = it }, stringResource(R.string.name), icon = Icons.Rounded.Person)
+            LocalizedTextField(name, { name = it }, stringResource(R.string.name), icon = Icons.Rounded.Person, isPhonetic = true)
             
             OutlinedTextField(
                 value = con, 
@@ -293,7 +293,7 @@ fun MandiEditScreen(
         ) {
             if (selectedCategory == "buyers") {
                 Text("BUYER INFORMATION", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = Color.Gray)
-                LocalizedTextField(buyerName, { buyerName = it }, stringResource(R.string.name), icon = Icons.Rounded.Person)
+                LocalizedTextField(buyerName, { buyerName = it }, stringResource(R.string.name), icon = Icons.Rounded.Person, isPhonetic = true)
                 LocalizedTextField(cropName, { cropName = it }, stringResource(R.string.crop_prices), icon = Icons.Rounded.Agriculture)
                 
                 Text("CONTACT & ADDRESS", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = Color.Gray)
@@ -574,7 +574,7 @@ fun FamilyFunctionEditScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Text("VENDOR INFORMATION", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = Color.Gray)
-            LocalizedTextField(name, { name = it }, stringResource(R.string.name), icon = Icons.Rounded.Store)
+            LocalizedTextField(name, { name = it }, stringResource(R.string.name), icon = Icons.Rounded.Store, isPhonetic = true)
             
             OutlinedTextField(
                 value = contact, 

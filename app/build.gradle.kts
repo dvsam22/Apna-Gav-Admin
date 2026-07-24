@@ -46,6 +46,7 @@ android {
 
 dependencies {
     implementation(libs.androidx.appcompat)
+    implementation(libs.mlkit.translate)
     implementation(libs.google.auth.library.oauth2.http)
     implementation(platform(libs.androidx.compose.bom))
     implementation(platform(libs.firebase.bom))
