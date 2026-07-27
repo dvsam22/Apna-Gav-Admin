@@ -28,6 +28,8 @@
     <string name="bricks">ईंटें</string>
     <string name="hardware_shops">हार्डवेयर की दुकानें</string>
     <string name="material_shops">सामग्री की दुकानें</string>
+    <string name="linter_machine">लिंटर मशीन</string>
+    <string name="shuttering">शटरिंग सेक्शन</string>
     <string name="tractor">ट्रैक्टर</string>
     <string name="car">कार</string>
     <string name="pickup_truck">पिकअप/ट्रक</string>

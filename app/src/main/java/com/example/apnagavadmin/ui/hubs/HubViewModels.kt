@@ -14,7 +14,8 @@ data class HubState<T>(
     val categories: List<LabourCategory> = emptyList(),
     val isLoading: Boolean = false,
     val error: AppError? = null,
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val shouldDismiss: Boolean = false
 )
 
 abstract class BaseHubViewModel<T>(
@@ -33,6 +34,10 @@ abstract class BaseHubViewModel<T>(
 
     fun onSearchQueryChange(query: String) {
         _state.update { it.copy(searchQuery = query) }
+    }
+
+    fun resetDismiss() {
+        _state.update { it.copy(shouldDismiss = false) }
     }
 
     abstract fun load()
@@ -70,13 +75,27 @@ abstract class BaseHubViewModel<T>(
         item: T,
         saveAction: suspend (String, T) -> Resource<Unit>
     ) = viewModelScope.launch {
-        if (villageId == "all" && isNew) {
-            villageRepository.getVillages().filter { it is Resource.Success }.first().data?.forEach { v ->
-                saveAction(v.id, item)
+        _state.update { it.copy(isLoading = true) }
+        val result = if (villageId == "all" && isNew) {
+            val villages = villageRepository.getVillages().filter { it is Resource.Success }.first().data
+            var lastRes: Resource<Unit> = Resource.Success(Unit)
+            villages?.forEach { v ->
+                lastRes = saveAction(v.id, item)
             }
+            lastRes
         } else {
             val vId = if (villageId == "all") (item as? HubItem)?.villageId ?: villageId else villageId
             saveAction(vId, item)
+        }
+        
+        _state.update { it.copy(isLoading = false) }
+        when (result) {
+            is Resource.Success -> {
+                com.example.apnagavadmin.util.GlobalEventBus.showToast("Saved successfully!")
+                _state.update { it.copy(shouldDismiss = true) }
+            }
+            is Resource.Error -> com.example.apnagavadmin.util.GlobalEventBus.showToast("Error: ${result.error?.message}")
+            else -> {}
         }
     }
 }

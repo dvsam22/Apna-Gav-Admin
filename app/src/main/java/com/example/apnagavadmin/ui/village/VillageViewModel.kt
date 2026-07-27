@@ -19,7 +19,8 @@ data class VillageState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val searchQuery: String = "",
-    val selectedFilter: VillageFilter = VillageFilter.ALL
+    val selectedFilter: VillageFilter = VillageFilter.ALL,
+    val shouldDismiss: Boolean = false
 )
 
 class VillageViewModel(
@@ -39,6 +40,10 @@ class VillageViewModel(
 
     fun onFilterChange(filter: VillageFilter) {
         _state.value = _state.value.copy(selectedFilter = filter)
+    }
+
+    fun resetDismiss() {
+        _state.value = _state.value.copy(shouldDismiss = false)
     }
 
     private fun getVillages() {
@@ -70,10 +75,13 @@ class VillageViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
             val result = repository.addVillage(village)
+            _state.value = _state.value.copy(isLoading = false)
             if (result is Resource.Error) {
-                _state.value = _state.value.copy(error = result.message, isLoading = false)
+                _state.value = _state.value.copy(error = result.message)
+                com.example.apnagavadmin.util.GlobalEventBus.showToast("Error: ${result.message}")
             } else {
-                _state.value = _state.value.copy(isLoading = false, error = null)
+                _state.value = _state.value.copy(error = null, shouldDismiss = true)
+                com.example.apnagavadmin.util.GlobalEventBus.showToast("Village added successfully!")
             }
         }
     }
@@ -82,10 +90,13 @@ class VillageViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
             val result = repository.updateVillage(village)
+            _state.value = _state.value.copy(isLoading = false)
             if (result is Resource.Error) {
-                _state.value = _state.value.copy(error = result.message, isLoading = false)
+                _state.value = _state.value.copy(error = result.message)
+                com.example.apnagavadmin.util.GlobalEventBus.showToast("Error: ${result.message}")
             } else {
-                _state.value = _state.value.copy(isLoading = false, error = null)
+                _state.value = _state.value.copy(error = null, shouldDismiss = true)
+                com.example.apnagavadmin.util.GlobalEventBus.showToast("Village updated successfully!")
             }
         }
     }
@@ -103,6 +114,9 @@ class VillageViewModel(
                     if (v.id == village.id) v.copy(isActive = !isActive) else v
                 }
                 _state.value = _state.value.copy(villages = revertedList, error = result.message)
+                com.example.apnagavadmin.util.GlobalEventBus.showToast("Error: ${result.message}")
+            } else {
+                com.example.apnagavadmin.util.GlobalEventBus.showToast("Status updated!")
             }
         }
     }
@@ -111,10 +125,13 @@ class VillageViewModel(
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
             val result = repository.deleteVillage(villageId)
+            _state.value = _state.value.copy(isLoading = false)
             if (result is Resource.Error) {
-                _state.value = _state.value.copy(error = result.message, isLoading = false)
+                _state.value = _state.value.copy(error = result.message)
+                com.example.apnagavadmin.util.GlobalEventBus.showToast("Error: ${result.message}")
             } else {
-                _state.value = _state.value.copy(isLoading = false, error = null)
+                _state.value = _state.value.copy(error = null)
+                com.example.apnagavadmin.util.GlobalEventBus.showToast("Village deleted successfully!")
             }
         }
     }

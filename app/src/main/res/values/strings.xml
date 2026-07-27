@@ -28,6 +28,8 @@
     <string name="bricks">Bricks</string>
     <string name="hardware_shops">Hardware Shops</string>
     <string name="material_shops">Material Shops</string>
+    <string name="linter_machine">Linter Machine</string>
+    <string name="shuttering">Shuttering Section</string>
     <string name="tractor">Tractor</string>
     <string name="car">Car</string>
     <string name="pickup_truck">Pickup/Truck</string>

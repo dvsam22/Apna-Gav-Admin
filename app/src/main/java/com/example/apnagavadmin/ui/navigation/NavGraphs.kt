@@ -3,11 +3,11 @@ package com.example.apnagavadmin.ui.navigation
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.EntryProviderScope
-import com.example.apnagavadmin.data.model.Village
+import com.example.apnagavadmin.data.model.*
 import com.example.apnagavadmin.navigation.NavRoute
 import com.example.apnagavadmin.ui.details.VillageDetailsScreen
 import com.example.apnagavadmin.ui.hubs.*
@@ -35,12 +35,19 @@ fun EntryProviderScope<NavRoute>.mainGraph(
         clazz = NavRoute.UpsertVillage::class,
         metadata = ListDetailSceneStrategy.detailPane()
     ) { route ->
+        val state by villageViewModel.state.collectAsState()
+        LaunchedEffect(state.shouldDismiss) {
+            if (state.shouldDismiss) {
+                if (backStack.size > 0) backStack.removeAt(backStack.size - 1)
+                villageViewModel.resetDismiss()
+            }
+        }
         VillageEditScreen(
             village = route.model,
-            onBack = { backStack.removeLastOrNull() },
+            isLoading = state.isLoading,
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             onSave = { 
                 if (route.model == null) villageViewModel.addVillage(it) else villageViewModel.updateVillage(it)
-                backStack.removeLastOrNull()
             }
         )
     }
@@ -50,7 +57,7 @@ fun EntryProviderScope<NavRoute>.mainGraph(
     ) { route ->
         VillageDetailsScreen(
             villageId = route.villageId,
-            onBack = { backStack.removeLastOrNull() },
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             onNavigateToHub = { hub ->
                 val nextRoute = when(hub) {
                     "labour" -> NavRoute.LabourScreen(route.villageId)
@@ -80,7 +87,7 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     addEntryProvider(clazz = NavRoute.LabourScreen::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         LabourScreen(
             viewModel = viewModel(key = "Labour_${route.villageId}") { LabourViewModel(villageId = route.villageId) },
-            onBack = { backStack.removeLastOrNull() },
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             villages = villages,
             selectedVillageId = route.villageId,
             onVillageChange = onVillageChange,
@@ -91,12 +98,22 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     }
     addEntryProvider(clazz = NavRoute.UpsertLabour::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         val vm: LabourViewModel = viewModel(key = "Labour_${route.villageId}") { LabourViewModel(villageId = route.villageId) }
+        val state by vm.state.collectAsState()
+        LaunchedEffect(route.categoryId) {
+            vm.selectCategory(route.categoryId)
+        }
+        LaunchedEffect(state.shouldDismiss) {
+            if (state.shouldDismiss) {
+                if (backStack.size > 0) backStack.removeAt(backStack.size - 1)
+                vm.resetDismiss()
+            }
+        }
         LabourEditScreen(
             provider = route.provider,
-            onBack = { backStack.removeLastOrNull() },
+            isLoading = state.isLoading,
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             onSave = { 
                 vm.save(it)
-                backStack.removeLastOrNull()
             }
         )
     }
@@ -105,7 +122,7 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     addEntryProvider(clazz = NavRoute.ConstructionScreen::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         ConstructionScreen(
             viewModel = viewModel(key = "Construction_${route.villageId}") { ConstructionViewModel(villageId = route.villageId) },
-            onBack = { backStack.removeLastOrNull() },
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             villages = villages,
             selectedVillageId = route.villageId,
             onVillageChange = onVillageChange,
@@ -116,12 +133,22 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     }
     addEntryProvider(clazz = NavRoute.UpsertConstruction::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         val vm: ConstructionViewModel = viewModel(key = "Construction_${route.villageId}") { ConstructionViewModel(villageId = route.villageId) }
+        val state by vm.state.collectAsState()
+        LaunchedEffect(route.categoryId) {
+            vm.selectCategory(route.categoryId)
+        }
+        LaunchedEffect(state.shouldDismiss) {
+            if (state.shouldDismiss) {
+                if (backStack.size > 0) backStack.removeAt(backStack.size - 1)
+                vm.resetDismiss()
+            }
+        }
         ConstructionEditScreen(
             hub = route.model,
-            onBack = { backStack.removeLastOrNull() },
+            isLoading = state.isLoading,
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             onSave = {
                 vm.save(it)
-                backStack.removeLastOrNull()
             }
         )
     }
@@ -130,7 +157,7 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     addEntryProvider(clazz = NavRoute.TransportScreen::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         TransportScreen(
             viewModel = viewModel(key = "Transport_${route.villageId}") { TransportViewModel(villageId = route.villageId) },
-            onBack = { backStack.removeLastOrNull() },
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             villages = villages,
             selectedVillageId = route.villageId,
             onVillageChange = onVillageChange,
@@ -141,12 +168,22 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     }
     addEntryProvider(clazz = NavRoute.UpsertTransport::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         val vm: TransportViewModel = viewModel(key = "Transport_${route.villageId}") { TransportViewModel(villageId = route.villageId) }
+        val state by vm.state.collectAsState()
+        LaunchedEffect(route.categoryId) {
+            vm.selectCategory(route.categoryId)
+        }
+        LaunchedEffect(state.shouldDismiss) {
+            if (state.shouldDismiss) {
+                if (backStack.size > 0) backStack.removeAt(backStack.size - 1)
+                vm.resetDismiss()
+            }
+        }
         TransportEditScreen(
             hub = route.model,
-            onBack = { backStack.removeLastOrNull() },
+            isLoading = state.isLoading,
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             onSave = {
                 vm.save(it)
-                backStack.removeLastOrNull()
             }
         )
     }
@@ -155,7 +192,7 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     addEntryProvider(clazz = NavRoute.MandiScreen::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         MandiScreen(
             viewModel = viewModel(key = "Mandi_${route.villageId}") { MandiViewModel(villageId = route.villageId) },
-            onBack = { backStack.removeLastOrNull() },
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             villages = villages,
             selectedVillageId = route.villageId,
             onVillageChange = onVillageChange,
@@ -166,13 +203,23 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     }
     addEntryProvider(clazz = NavRoute.UpsertMandi::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         val vm: MandiViewModel = viewModel(key = "Mandi_${route.villageId}") { MandiViewModel(villageId = route.villageId) }
+        val state by vm.state.collectAsState()
+        LaunchedEffect(route.categoryId) {
+            vm.selectCategory(route.categoryId)
+        }
+        LaunchedEffect(state.shouldDismiss) {
+            if (state.shouldDismiss) {
+                if (backStack.size > 0) backStack.removeAt(backStack.size - 1)
+                vm.resetDismiss()
+            }
+        }
         MandiEditScreen(
             priceItem = route.model,
             selectedCategory = route.categoryId,
-            onBack = { backStack.removeLastOrNull() },
+            isLoading = state.isLoading,
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             onSave = {
                 vm.save(it)
-                backStack.removeLastOrNull()
             }
         )
     }
@@ -181,7 +228,7 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     addEntryProvider(clazz = NavRoute.HealthScreen::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         HealthScreen(
             viewModel = viewModel(key = "Health_${route.villageId}") { HealthViewModel(villageId = route.villageId) },
-            onBack = { backStack.removeLastOrNull() },
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             villages = villages,
             selectedVillageId = route.villageId,
             onVillageChange = onVillageChange,
@@ -192,13 +239,23 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     }
     addEntryProvider(clazz = NavRoute.UpsertHealth::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         val vm: HealthViewModel = viewModel(key = "Health_${route.villageId}") { HealthViewModel(villageId = route.villageId) }
+        val state by vm.state.collectAsState()
+        LaunchedEffect(route.categoryId) {
+            vm.selectCategory(route.categoryId)
+        }
+        LaunchedEffect(state.shouldDismiss) {
+            if (state.shouldDismiss) {
+                if (backStack.size > 0) backStack.removeAt(backStack.size - 1)
+                vm.resetDismiss()
+            }
+        }
         HealthEditScreen(
             hub = route.model,
             selectedCategory = route.categoryId,
-            onBack = { backStack.removeLastOrNull() },
+            isLoading = state.isLoading,
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             onSave = {
                 vm.save(it)
-                backStack.removeLastOrNull()
             }
         )
     }
@@ -207,7 +264,7 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     addEntryProvider(clazz = NavRoute.FamilyFunctionScreen::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         FamilyFunctionScreen(
             viewModel = viewModel(key = "Family_${route.villageId}") { FamilyFunctionViewModel(villageId = route.villageId) },
-            onBack = { backStack.removeLastOrNull() },
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             villages = villages,
             selectedVillageId = route.villageId,
             onVillageChange = onVillageChange,
@@ -218,12 +275,22 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     }
     addEntryProvider(clazz = NavRoute.UpsertFamilyFunction::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         val vm: FamilyFunctionViewModel = viewModel(key = "Family_${route.villageId}") { FamilyFunctionViewModel(villageId = route.villageId) }
+        val state by vm.state.collectAsState()
+        LaunchedEffect(route.categoryId) {
+            vm.selectCategory(route.categoryId)
+        }
+        LaunchedEffect(state.shouldDismiss) {
+            if (state.shouldDismiss) {
+                if (backStack.size > 0) backStack.removeAt(backStack.size - 1)
+                vm.resetDismiss()
+            }
+        }
         FamilyFunctionEditScreen(
             hub = route.model,
-            onBack = { backStack.removeLastOrNull() },
+            isLoading = state.isLoading,
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             onSave = {
                 vm.save(it)
-                backStack.removeLastOrNull()
             }
         )
     }
@@ -232,7 +299,7 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     addEntryProvider(clazz = NavRoute.NewsScreen::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         NewsScreen(
             viewModel = viewModel(key = "News_${route.villageId}") { NewsViewModel(villageId = route.villageId) },
-            onBack = { backStack.removeLastOrNull() },
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             villages = villages,
             selectedVillageId = route.villageId,
             onVillageChange = onVillageChange,
@@ -243,19 +310,26 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     }
     addEntryProvider(clazz = NavRoute.UpsertNews::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         val vm: NewsViewModel = viewModel(key = "News_${route.villageId}") { NewsViewModel(villageId = route.villageId) }
+        val state by vm.state.collectAsState()
+        LaunchedEffect(state.shouldDismiss) {
+            if (state.shouldDismiss) {
+                if (backStack.size > 0) backStack.removeAt(backStack.size - 1)
+                vm.resetDismiss()
+            }
+        }
         NewsEditScreen(
             newsItem = route.model,
-            onBack = { backStack.removeLastOrNull() },
+            isLoading = state.isLoading,
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             onSave = {
                 vm.save(it)
-                backStack.removeLastOrNull()
             }
         )
     }
     addEntryProvider(clazz = NavRoute.BannerScreen::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         BannerScreen(
             viewModel = viewModel(key = "Banner_${route.villageId}") { BannerViewModel(villageId = route.villageId) },
-            onBack = { backStack.removeLastOrNull() },
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             villages = villages,
             selectedVillageId = route.villageId,
             onVillageChange = onVillageChange,
@@ -266,19 +340,26 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     }
     addEntryProvider(clazz = NavRoute.UpsertBanner::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         val vm: BannerViewModel = viewModel(key = "Banner_${route.villageId}") { BannerViewModel(villageId = route.villageId) }
+        val state by vm.state.collectAsState()
+        LaunchedEffect(state.shouldDismiss) {
+            if (state.shouldDismiss) {
+                if (backStack.size > 0) backStack.removeAt(backStack.size - 1)
+                vm.resetDismiss()
+            }
+        }
         BannerEditScreen(
             banner = route.model,
-            onBack = { backStack.removeLastOrNull() },
+            isLoading = state.isLoading,
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             onSave = {
                 vm.save(it)
-                backStack.removeLastOrNull()
             }
         )
     }
     addEntryProvider(clazz = NavRoute.NotificationScreen::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         NotificationScreen(
             viewModel = viewModel(key = "Notification_${route.villageId}") { NotificationViewModel(villageId = route.villageId) },
-            onBack = { backStack.removeLastOrNull() },
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             villages = villages,
             selectedVillageId = route.villageId,
             onVillageChange = onVillageChange,
@@ -289,12 +370,19 @@ fun EntryProviderScope<NavRoute>.hubGraph(
     }
     addEntryProvider(clazz = NavRoute.UpsertNotification::class, metadata = ListDetailSceneStrategy.detailPane()) { route ->
         val vm: NotificationViewModel = viewModel(key = "Notification_${route.villageId}") { NotificationViewModel(villageId = route.villageId) }
+        val state by vm.state.collectAsState()
+        LaunchedEffect(state.shouldDismiss) {
+            if (state.shouldDismiss) {
+                if (backStack.size > 0) backStack.removeAt(backStack.size - 1)
+                vm.resetDismiss()
+            }
+        }
         NotificationEditScreen(
             notification = route.model,
-            onBack = { backStack.removeLastOrNull() },
+            isLoading = state.isLoading,
+            onBack = { if (backStack.size > 0) backStack.removeAt(backStack.size - 1) },
             onSave = {
                 vm.save(it)
-                backStack.removeLastOrNull()
             }
         )
     }

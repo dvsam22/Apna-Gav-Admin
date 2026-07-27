@@ -50,6 +50,17 @@ class MainActivity : AppCompatActivity() {
 
         setContent {
             ApnaGavAdminTheme {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    com.example.apnagavadmin.util.GlobalEventBus.events.collect { event ->
+                        when (event) {
+                            is com.example.apnagavadmin.util.UiEvent.ShowToast -> {
+                                android.widget.Toast.makeText(context, event.message, android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }
+
                 val backStack = remember { mutableStateListOf<NavRoute>(NavRoute.VillageList) }
                 ApnaGavNavHost(backStack = backStack)
             }

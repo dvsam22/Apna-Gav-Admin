@@ -44,6 +44,8 @@ fun ConstructionScreen(
             title = when (selectedCategory) {
                 "bricks" -> stringResource(R.string.bricks)
                 "hardware_shops" -> stringResource(R.string.hardware_shops)
+                "linter_machine" -> stringResource(R.string.linter_machine)
+                "shuttering" -> stringResource(R.string.shuttering)
                 else -> stringResource(R.string.material_shops)
             },
             subtitle = "${state.items.size} ${stringResource(R.string.available)}",
@@ -59,12 +61,21 @@ fun ConstructionScreen(
                 it.shopName.en.contains(state.searchQuery, true) || 
                 it.shopName.hi.contains(state.searchQuery, true) 
             }, state.isLoading, state.error, contentPadding = padding) { item ->
+                val details = if (selectedCategory == "linter_machine" || selectedCategory == "shuttering") {
+                    item.products.map { Icons.Rounded.Payments to "${it.name.text()} - ₹${it.price}/${it.unit.text()}" }
+                } else {
+                    item.products.map { Icons.Rounded.Build to "${it.name.text()} - ₹${it.price}/${it.unit.text()}" }
+                }
+
                 DetailCard(
                     title = item.shopName.text(),
                     location = item.address.text(),
-                    details = item.products.map { Icons.Rounded.Build to "${it.name.text()} - ₹${it.price}/${it.unit.text()}" },
+                    details = details,
                     onEdit = { onNavigateToEdit(selectedCategory!!, item) },
-                    onDelete = { viewModel.delete(item) }
+                    onDelete = { viewModel.delete(item) },
+                    onCallClick = { 
+                        // Logic to initiate call if needed
+                    }
                 )
             }
         }
@@ -97,6 +108,8 @@ fun ConstructionHubMainScreen(onBack: () -> Unit, onCategoryClick: (String) -> U
             item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.bricks), Icons.Rounded.Build) { onCategoryClick("bricks") } } }
             item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.material_shops), Icons.Rounded.ShoppingCart) { onCategoryClick("material_shops") } } }
             item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.hardware_shops), Icons.Rounded.Handyman) { onCategoryClick("hardware_shops") } } }
+            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.linter_machine), Icons.Rounded.Construction) { onCategoryClick("linter_machine") } } }
+            item { Box(Modifier.padding(horizontal = 16.dp)) { CategoryTile(stringResource(R.string.shuttering), Icons.Rounded.Layers) { onCategoryClick("shuttering") } } }
         }
     }
 }

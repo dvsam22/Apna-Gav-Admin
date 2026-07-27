@@ -21,31 +21,42 @@ import com.example.apnagavadmin.data.model.*
 @Composable
 fun EditScaffold(
     title: String,
+    isLoading: Boolean = false,
     onBack: () -> Unit,
     onSave: () -> Unit,
     content: @Composable (PaddingValues) -> Unit
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(title, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
+            Column {
+                TopAppBar(
+                    title = { Text(title, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.back))
+                        }
+                    },
+                    actions = {
+                        Button(
+                            onClick = onSave,
+                            enabled = !isLoading,
+                            modifier = Modifier.padding(end = 8.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            if (isLoading) {
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                            } else {
+                                Icon(Icons.Rounded.Save, null, modifier = Modifier.size(18.dp))
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.save))
+                        }
                     }
-                },
-                actions = {
-                    Button(
-                        onClick = onSave,
-                        modifier = Modifier.padding(end = 8.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Icon(Icons.Rounded.Save, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.save))
-                    }
+                )
+                if (isLoading) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = PrimaryTeal)
                 }
-            )
+            }
         },
         content = content
     )
@@ -54,6 +65,7 @@ fun EditScaffold(
 @Composable
 fun LabourEditScreen(
     provider: LabourProvider? = null,
+    isLoading: Boolean = false,
     onBack: () -> Unit,
     onSave: (LabourProvider) -> Unit
 ) {
@@ -65,6 +77,7 @@ fun LabourEditScreen(
 
     EditScaffold(
         title = if (provider == null) stringResource(R.string.add_labourer) else stringResource(R.string.edit_labourer),
+        isLoading = isLoading,
         onBack = onBack,
         onSave = {
             onSave(provider?.copy(name = name, location = location, contact = contact, skills = skills, charges = charges) 
@@ -104,6 +117,7 @@ fun LabourEditScreen(
 @Composable
 fun ConstructionEditScreen(
     hub: ConstructionHub? = null,
+    isLoading: Boolean = false,
     onBack: () -> Unit,
     onSave: (ConstructionHub) -> Unit
 ) {
@@ -118,6 +132,7 @@ fun ConstructionEditScreen(
 
     EditScaffold(
         title = if (hub == null) stringResource(R.string.add_provider) else stringResource(R.string.edit_provider),
+        isLoading = isLoading,
         onBack = onBack,
         onSave = {
             onSave(hub?.copy(shopName = shopName, address = address, contact = contact, products = products.toList()) 
@@ -210,6 +225,7 @@ fun ConstructionEditScreen(
 @Composable
 fun TransportEditScreen(
     hub: TransportHub? = null,
+    isLoading: Boolean = false,
     onBack: () -> Unit,
     onSave: (TransportHub) -> Unit
 ) {
@@ -220,6 +236,7 @@ fun TransportEditScreen(
 
     EditScaffold(
         title = if (hub == null) stringResource(R.string.add_provider) else stringResource(R.string.edit_provider),
+        isLoading = isLoading,
         onBack = onBack,
         onSave = {
             onSave(hub?.copy(name = name, location = loc, contact = con, vehicleType = type) 
@@ -259,6 +276,7 @@ fun TransportEditScreen(
 fun MandiEditScreen(
     priceItem: MandiPrice? = null,
     selectedCategory: String,
+    isLoading: Boolean = false,
     onBack: () -> Unit,
     onSave: (MandiPrice) -> Unit
 ) {
@@ -271,6 +289,7 @@ fun MandiEditScreen(
 
     EditScaffold(
         title = if (priceItem == null) stringResource(R.string.add) else stringResource(R.string.edit),
+        isLoading = isLoading,
         onBack = onBack,
         onSave = {
             onSave(priceItem?.copy(
@@ -332,6 +351,7 @@ fun MandiEditScreen(
 fun HealthEditScreen(
     hub: HealthHub? = null,
     selectedCategory: String,
+    isLoading: Boolean = false,
     onBack: () -> Unit,
     onSave: (HealthHub) -> Unit
 ) {
@@ -346,6 +366,7 @@ fun HealthEditScreen(
 
     EditScaffold(
         title = if (hub == null) stringResource(R.string.add_provider) else stringResource(R.string.edit_provider),
+        isLoading = isLoading,
         onBack = onBack,
         onSave = {
             onSave(hub?.copy(
@@ -405,6 +426,7 @@ fun HealthEditScreen(
 @Composable
 fun NewsEditScreen(
     newsItem: News? = null,
+    isLoading: Boolean = false,
     onBack: () -> Unit,
     onSave: (News) -> Unit
 ) {
@@ -414,6 +436,7 @@ fun NewsEditScreen(
 
     EditScaffold(
         title = if (newsItem == null) stringResource(R.string.add) else stringResource(R.string.edit),
+        isLoading = isLoading,
         onBack = onBack,
         onSave = {
             onSave(newsItem?.copy(title = title, description = description, image = image, type = "news") 
@@ -450,6 +473,7 @@ fun NewsEditScreen(
 @Composable
 fun BannerEditScreen(
     banner: Banner? = null,
+    isLoading: Boolean = false,
     onBack: () -> Unit,
     onSave: (Banner) -> Unit
 ) {
@@ -460,6 +484,7 @@ fun BannerEditScreen(
 
     EditScaffold(
         title = if (banner == null) stringResource(R.string.add) else stringResource(R.string.edit),
+        isLoading = isLoading,
         onBack = onBack,
         onSave = {
             onSave(banner?.copy(title = title, discountText = discountText, imageUrl = imageUrl, link = link) 
@@ -514,6 +539,7 @@ fun BannerEditScreen(
 @Composable
 fun NotificationEditScreen(
     notification: AppNotification? = null,
+    isLoading: Boolean = false,
     onBack: () -> Unit,
     onSave: (AppNotification) -> Unit
 ) {
@@ -522,6 +548,7 @@ fun NotificationEditScreen(
 
     EditScaffold(
         title = if (notification == null) stringResource(R.string.add) else stringResource(R.string.edit),
+        isLoading = isLoading,
         onBack = onBack,
         onSave = {
             onSave(notification?.copy(title = title, message = message, type = "notification") 
@@ -547,6 +574,7 @@ fun NotificationEditScreen(
 @Composable
 fun FamilyFunctionEditScreen(
     hub: FamilyFunctionHub? = null,
+    isLoading: Boolean = false,
     onBack: () -> Unit,
     onSave: (FamilyFunctionHub) -> Unit
 ) {
@@ -558,6 +586,7 @@ fun FamilyFunctionEditScreen(
 
     EditScaffold(
         title = if (hub == null) stringResource(R.string.add_provider) else stringResource(R.string.edit_provider),
+        isLoading = isLoading,
         onBack = onBack,
         onSave = {
             onSave(hub?.copy(name = name, address = address, contact = contact, services = services, startingPrice = startingPrice) 
@@ -597,6 +626,7 @@ fun FamilyFunctionEditScreen(
 @Composable
 fun VillageEditScreen(
     village: Village? = null,
+    isLoading: Boolean = false,
     onBack: () -> Unit,
     onSave: (Village) -> Unit
 ) {
@@ -611,6 +641,7 @@ fun VillageEditScreen(
 
     EditScaffold(
         title = if (village == null) stringResource(R.string.add_village) else stringResource(R.string.edit_village),
+        isLoading = isLoading,
         onBack = onBack,
         onSave = {
             onSave(village?.copy(
