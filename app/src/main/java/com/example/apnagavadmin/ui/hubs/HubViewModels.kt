@@ -120,6 +120,7 @@ class LabourViewModel(
                         LabourCategory(id = "electrician", name = LocalizedString(en = "Electrician", hi = "इलेक्ट्रिशियन")),
                         LabourCategory(id = "carpenter", name = LocalizedString(en = "Carpenter", hi = "बढ़ई")),
                         LabourCategory(id = "tailor", name = LocalizedString(en = "Tailor", hi = "दर्जी")),
+                        LabourCategory(id = "painter", name = LocalizedString(en = "Painter", hi = "पेंटर")),
                         LabourCategory(id = "labour", name = LocalizedString(en = "Labour", hi = "मजदूर"))
                     )
                     val categories = if (res.data.isNullOrEmpty()) defaultCategories else res.data

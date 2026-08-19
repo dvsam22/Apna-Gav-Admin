@@ -126,6 +126,7 @@ fun getLabourIcon(category: String): ImageVector {
         "electrician" -> Icons.Rounded.Settings
         "carpenter" -> Icons.Rounded.Edit
         "tailor" -> Icons.Rounded.AccountBox
+        "painter" -> Icons.Rounded.Brush
         "rajmistri" -> Icons.Rounded.Home
         else -> Icons.Rounded.Person
     }

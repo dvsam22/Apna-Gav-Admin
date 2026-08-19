@@ -37,10 +37,10 @@ class MainActivity : AppCompatActivity() {
             navigationBarStyle = SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
         )
 
-        // Generate dummy data only once
+        // Generate Ausani real data on launch
         lifecycleScope.launch {
-            // Force reset for new village list (Remove this line after first run)
-            // preferenceManager.setDummyDataGenerated(false) 
+            // Force reset to upload Ausani village data
+            preferenceManager.setDummyDataGenerated(false) 
 
             if (!preferenceManager.isDummyDataGenerated.first()) {
                 DummyDataGenerator().generateAllData()
